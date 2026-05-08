@@ -1,0 +1,281 @@
+"use client";
+
+import { useState, useMemo } from "react";
+import TabLayout from "@/components/layout/TabLayout";
+import LoanForm from "@/components/loan/LoanForm";
+import IncomeForm from "@/components/loan/IncomeForm";
+import LoanRepaymentChart from "@/components/loan/LoanRepaymentChart";
+import LoanSummaryCard from "@/components/loan/LoanSummaryCard";
+import CashFlowChart from "@/components/loan/CashFlowChart";
+import ChildrenSimulator from "@/components/household/ChildrenSimulator";
+import AssetsForm from "@/components/household/AssetsForm";
+import LifeEventsTable from "@/components/household/LifeEventsTable";
+import AssetGrowthChart from "@/components/household/AssetGrowthChart";
+import SavedList from "@/components/saved/SavedList";
+import { calculateLoan } from "@/lib/calculations";
+import type {
+  LoanInput,
+  IncomeInput,
+  HouseholdInput,
+  RatePeriodInput,
+  SimulationDetail,
+} from "@/types";
+
+type Tab = "loan" | "household" | "saved";
+
+const DEFAULT_RATE_PERIOD: RatePeriodInput = {
+  id: "1",
+  startYear: 1,
+  endYear: 35,
+  annualRate: 1.0,
+};
+
+const DEFAULT_LOAN_INPUT: LoanInput = {
+  loanAmount: 3000,
+  termYears: 35,
+  repaymentType: "EQUAL_INSTALLMENT",
+  useFiveYearRule: false,
+  use125PercentRule: false,
+  ratePeriods: [DEFAULT_RATE_PERIOD],
+};
+
+const DEFAULT_INCOME_INPUT: IncomeInput = {
+  husbandAnnualIncome: 500,
+  wifeAnnualIncome: 300,
+  husbandRaiseRate: 2,
+  wifeRaiseRate: 2,
+  monthlyLivingCost: 20,
+};
+
+const DEFAULT_HOUSEHOLD_INPUT: HouseholdInput = {
+  husbandAssets: 0,
+  wifeAssets: 0,
+  monthlyInvestment: 3,
+  averageYield: 3,
+  children: [],
+  lifeEvents: [
+    { id: "1", eventName: "車購入", year: 5, amount: 300 },
+    { id: "2", eventName: "自宅リフォーム", year: 15, amount: 200 },
+    { id: "3", eventName: "家電買い替え", year: 10, amount: 50 },
+  ],
+};
+
+export default function Home() {
+  const [activeTab, setActiveTab] = useState<Tab>("loan");
+  const [loanInput, setLoanInput] = useState<LoanInput>(DEFAULT_LOAN_INPUT);
+  const [incomeInput, setIncomeInput] =
+    useState<IncomeInput>(DEFAULT_INCOME_INPUT);
+  const [householdInput, setHouseholdInput] = useState<HouseholdInput>(
+    DEFAULT_HOUSEHOLD_INPUT
+  );
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
+
+  const loanResult = useMemo(() => calculateLoan(loanInput), [loanInput]);
+
+  const currentYear = new Date().getFullYear();
+
+  async function handleSave() {
+    const name = window.prompt("シミュレーション名を入力してください", "マイシミュレーション");
+    if (!name) return;
+    try {
+      await fetch("/api/simulations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          loanAmount: loanInput.loanAmount,
+          termYears: loanInput.termYears,
+          repaymentType: loanInput.repaymentType,
+          useFiveYearRule: loanInput.useFiveYearRule,
+          use125PercentRule: loanInput.use125PercentRule,
+          totalPayment: loanResult.totalPayment,
+          ratePeriods: loanInput.ratePeriods.map(({ startYear, endYear, annualRate }) => ({
+            startYear,
+            endYear,
+            annualRate,
+          })),
+          household: {
+            husbandAnnualIncome: incomeInput.husbandAnnualIncome,
+            wifeAnnualIncome: incomeInput.wifeAnnualIncome,
+            husbandRaiseRate: incomeInput.husbandRaiseRate,
+            wifeRaiseRate: incomeInput.wifeRaiseRate,
+            monthlyLivingCost: incomeInput.monthlyLivingCost,
+            husbandAssets: householdInput.husbandAssets,
+            wifeAssets: householdInput.wifeAssets,
+            monthlyInvestment: householdInput.monthlyInvestment,
+            averageYield: householdInput.averageYield,
+            children: householdInput.children.map(({ name: n, birthYear, nursing, elementary, middle, high, university }) => ({
+              name: n, birthYear, nursing, elementary, middle, high, university,
+            })),
+            lifeEvents: householdInput.lifeEvents.map(({ eventName, year, amount }) => ({
+              eventName, year, amount,
+            })),
+          },
+        }),
+      });
+      setSaveMessage("保存しました");
+      setTimeout(() => setSaveMessage(null), 3000);
+    } catch {
+      setSaveMessage("保存に失敗しました");
+      setTimeout(() => setSaveMessage(null), 3000);
+    }
+  }
+
+  function handleLoadSimulation(detail: SimulationDetail) {
+    setLoanInput({
+      loanAmount: detail.loanAmount,
+      termYears: detail.termYears,
+      repaymentType: detail.repaymentType,
+      useFiveYearRule: detail.useFiveYearRule,
+      use125PercentRule: detail.use125PercentRule,
+      ratePeriods: detail.ratePeriods.map((rp, i) => ({
+        id: String(i + 1),
+        startYear: rp.startYear,
+        endYear: rp.endYear,
+        annualRate: rp.annualRate,
+      })),
+    });
+    if (detail.household) {
+      setIncomeInput({
+        husbandAnnualIncome: detail.household.husbandAnnualIncome,
+        wifeAnnualIncome: detail.household.wifeAnnualIncome,
+        husbandRaiseRate: detail.household.husbandRaiseRate,
+        wifeRaiseRate: detail.household.wifeRaiseRate,
+        monthlyLivingCost: detail.household.monthlyLivingCost,
+      });
+      setHouseholdInput({
+        husbandAssets: detail.household.husbandAssets,
+        wifeAssets: detail.household.wifeAssets,
+        monthlyInvestment: detail.household.monthlyInvestment,
+        averageYield: detail.household.averageYield,
+        children: detail.household.children.map((c, i) => ({
+          id: String(i + 1),
+          name: c.name,
+          birthYear: c.birthYear,
+          nursing: c.nursing,
+          elementary: c.elementary,
+          middle: c.middle,
+          high: c.high,
+          university: c.university,
+        })),
+        lifeEvents: detail.household.lifeEvents.map((e, i) => ({
+          id: String(i + 1),
+          eventName: e.eventName,
+          year: e.year,
+          amount: e.amount,
+        })),
+      });
+    }
+    setActiveTab("loan");
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-white shadow-sm">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold text-gray-800">金利君</h1>
+            <p className="text-xs text-gray-500">
+              住宅ローン返済シミュレーター・家計診断
+            </p>
+          </div>
+          {activeTab === "loan" && (
+            <button
+              onClick={handleSave}
+              className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              保存
+            </button>
+          )}
+        </div>
+        {saveMessage && (
+          <div className="max-w-6xl mx-auto px-4 pb-2">
+            <p className={`text-sm ${saveMessage.includes("失敗") ? "text-red-500" : "text-green-600"}`}>
+              {saveMessage}
+            </p>
+          </div>
+        )}
+      </header>
+
+      <TabLayout activeTab={activeTab} onTabChange={setActiveTab} />
+
+      <main className="max-w-6xl mx-auto px-4 py-6 space-y-6">
+        {/* Tab 1: ローンシミュレーター */}
+        {activeTab === "loan" && (
+          <>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <LoanForm value={loanInput} onChange={setLoanInput} />
+              <IncomeForm value={incomeInput} onChange={setIncomeInput} />
+            </div>
+
+            <LoanSummaryCard
+              loanResult={loanResult}
+              loanAmount={loanInput.loanAmount}
+            />
+
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <h2 className="text-base font-semibold text-gray-700 mb-4">
+                ローン返済グラフ
+              </h2>
+              <LoanRepaymentChart
+                loanResult={loanResult}
+                ratePeriods={loanInput.ratePeriods}
+                termYears={loanInput.termYears}
+              />
+            </div>
+
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <h2 className="text-base font-semibold text-gray-700 mb-4">
+                キャッシュフロー
+              </h2>
+              <CashFlowChart
+                loanResult={loanResult}
+                incomeInput={incomeInput}
+              />
+            </div>
+          </>
+        )}
+
+        {/* Tab 2: 家計診断 */}
+        {activeTab === "household" && (
+          <>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <AssetsForm value={householdInput} onChange={setHouseholdInput} />
+              <LifeEventsTable
+                events={householdInput.lifeEvents}
+                onChange={(lifeEvents) =>
+                  setHouseholdInput((prev) => ({ ...prev, lifeEvents }))
+                }
+              />
+            </div>
+
+            <ChildrenSimulator
+              childList={householdInput.children}
+              currentYear={currentYear}
+              termYears={loanInput.termYears}
+              onChange={(children) =>
+                setHouseholdInput((prev) => ({ ...prev, children }))
+              }
+            />
+
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <h2 className="text-base font-semibold text-gray-700 mb-4">
+                資産推移グラフ
+              </h2>
+              <AssetGrowthChart
+                householdInput={householdInput}
+                loanResult={loanResult}
+                currentYear={currentYear}
+              />
+            </div>
+          </>
+        )}
+
+        {/* Tab 3: 保存済み一覧 */}
+        {activeTab === "saved" && (
+          <SavedList onLoadSimulation={handleLoadSimulation} />
+        )}
+      </main>
+    </div>
+  );
+}

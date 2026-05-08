@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(winget install *)",
+      "PowerShell(gh auth *)",
+      "Bash(gh issue *)",
+      "WebFetch(domain:github.com)",
+      "Bash(npm --version)"
+    ]
+  }
+}

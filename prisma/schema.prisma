@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+enum RepaymentType {
+  EQUAL_INSTALLMENT
+  EQUAL_PRINCIPAL
+}
+
+enum SchoolType {
+  PUBLIC
+  PRIVATE
+}
+
+enum UnivType {
+  NATIONAL
+  PRIVATE_HUMANITIES
+  PRIVATE_SCIENCE
+}
+
+model Simulation {
+  id                Int            @id @default(autoincrement())
+  name              String         @default("未保存のシミュレーション")
+  loanAmount        Float
+  termYears         Int
+  repaymentType     RepaymentType  @default(EQUAL_INSTALLMENT)
+  useFiveYearRule   Boolean        @default(false)
+  use125PercentRule Boolean        @default(false)
+  totalPayment      Float          @default(0)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  ratePeriods RatePeriod[]
+  household   Household?
+}
+
+model RatePeriod {
+  id           Int        @id @default(autoincrement())
+  simulationId Int
+  startYear    Int
+  endYear      Int
+  annualRate   Float
+
+  simulation Simulation @relation(fields: [simulationId], references: [id], onDelete: Cascade)
+}
+
+model Household {
+  id                   Int     @id @default(autoincrement())
+  simulationId         Int     @unique
+  husbandAnnualIncome  Float   @default(0)
+  wifeAnnualIncome     Float   @default(0)
+  husbandRaiseRate     Float   @default(2)
+  wifeRaiseRate        Float   @default(2)
+  monthlyLivingCost    Float   @default(20)
+  husbandAssets        Float   @default(0)
+  wifeAssets           Float   @default(0)
+  monthlyInvestment    Float   @default(0)
+  averageYield         Float   @default(3)
+
+  simulation Simulation @relation(fields: [simulationId], references: [id], onDelete: Cascade)
+  children   Child[]
+  lifeEvents LifeEvent[]
+}
+
+model Child {
+  id          Int        @id @default(autoincrement())
+  householdId Int
+  name        String
+  birthYear   Int
+  nursing     SchoolType @default(PUBLIC)
+  elementary  SchoolType @default(PUBLIC)
+  middle      SchoolType @default(PUBLIC)
+  high        SchoolType @default(PUBLIC)
+  university  UnivType   @default(NATIONAL)
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+}
+
+model LifeEvent {
+  id          Int       @id @default(autoincrement())
+  householdId Int
+  eventName   String
+  year        Int
+  amount      Float
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+}
