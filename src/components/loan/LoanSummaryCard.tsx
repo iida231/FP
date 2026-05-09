@@ -19,6 +19,7 @@ export default function LoanSummaryCard({ loanResult, loanAmount }: Props) {
 
   const totalPaymentMan = Math.round(loanResult.totalPayment / 10000);
   const totalInterestMan = Math.round(loanResult.totalInterest / 10000);
+  const totalBonusPaymentMan = Math.round(loanResult.totalBonusPayment / 10000);
   const interestRatio = (loanResult.totalInterest / loanResult.totalPayment * 100).toFixed(1);
 
   const pieData = [
@@ -32,11 +33,18 @@ export default function LoanSummaryCard({ loanResult, loanAmount }: Props) {
     <div className="bg-white rounded-lg shadow-sm p-6">
       <h2 className="text-base font-semibold text-gray-800 mb-4">返済サマリー</h2>
 
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-4 gap-4 mb-6">
         <div className="text-center">
           <p className="text-xs text-gray-500 mb-1">合計返済額</p>
           <p className="text-lg font-bold text-gray-800">
             {totalPaymentMan.toLocaleString()}
+            <span className="text-sm font-normal text-gray-500 ml-1">万円</span>
+          </p>
+        </div>
+        <div className="text-center">
+          <p className="text-xs text-gray-500 mb-1">ボーナス返済額</p>
+          <p className="text-lg font-bold text-blue-600">
+            {totalBonusPaymentMan.toLocaleString()}
             <span className="text-sm font-normal text-gray-500 ml-1">万円</span>
           </p>
         </div>

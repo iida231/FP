@@ -91,6 +91,22 @@ export default function AssetsForm({ value, onChange }: Props) {
         </div>
       </div>
 
+      {/* 月間投資額 */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          月間投資額（万円）
+        </label>
+        <input
+          type="number"
+          min={0}
+          step={0.5}
+          value={value.monthlyInvestment}
+          onChange={(e) => handleField("monthlyInvestment", e.target.value)}
+          className="border border-gray-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <p className="text-xs text-gray-400 mt-1">毎月この金額を投資資産として積み立てます。残りの余剰金は現金として保持されます。</p>
+      </div>
+
       {/* 投資利回り */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">

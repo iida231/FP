@@ -19,6 +19,7 @@ export type LoanInput = {
   mortgageDeductionYears: number;  // 控除期間（年）
   mortgageDeductionMaxPerPerson?: number; // 控除上限（万円・一人当たり）
   mortgageDeductionClaimants?: number; // 控除申告人数（例: 1 または 2）
+  mortgageDeductionLoanType?: 'joint' | 'pair'; // 連帯債務/収入合算=joint、ペアローン=pair
 };
 
 export type IncomeInput = {
@@ -35,6 +36,13 @@ export type IncomeInput = {
   husbandWinterBonusMonths: number; // 冬ボーナス月数
   wifeSummerBonusMonths: number;
   wifeWinterBonusMonths: number;
+  // 時短勤務設定
+  husbandShortWorkStartYear?: number; // 時短開始年（西暦）
+  husbandShortWorkEndYear?: number;   // 時短終了年（西暦）
+  husbandShortWorkRatio?: number;     // 時短中の給料比率（0-1）
+  wifeShortWorkStartYear?: number;
+  wifeShortWorkEndYear?: number;
+  wifeShortWorkRatio?: number;
 };
 
 export type ChildInput = {
@@ -65,6 +73,13 @@ export type LifeEventInput = {
   amount: number;
 };
 
+export type IncomeEventInput = {
+  id: string;
+  eventName: string; // 例: "退職金", "自宅売却"
+  year: number;      // ローン開始からの年数
+  amount: number;    // 万円
+};
+
 export type HouseholdInput = {
   husbandCashAssets: number;       // 夫の現金資産（万円）
   husbandInvestmentAssets: number; // 夫の投資資産（万円）
@@ -74,6 +89,7 @@ export type HouseholdInput = {
   averageYield: number;
   children: ChildInput[];
   lifeEvents: LifeEventInput[];
+  incomeEvents: IncomeEventInput[]; // 退職金・物件売却など収入イベント
 };
 
 // ---- 計算結果型 ----
@@ -102,6 +118,7 @@ export type LoanResult = {
   annual: AnnualLoanSummary[];
   totalPayment: number;
   totalInterest: number;
+  totalBonusPayment: number; // ボーナス返済総額（円）
 };
 
 export type AnnualCashFlow = {
@@ -113,7 +130,9 @@ export type AnnualCashFlow = {
   wifeIncome: number;
   householdIncome: number;
   householdBaseIncome: number; // ボーナスを除いた世帯収入
+  householdTakeHome: number;   // 世帯手取り年収
   loanPayment: number;
+  monthlyRegularPayment: number; // 月額通常返済（万円・ボーナス含まず）
   livingCost: number;
   childrenCost: number; // 教育費＋追加生活費＋習い事
   mortgageDeduction: number; // 住宅ローン控除額（万円/年）

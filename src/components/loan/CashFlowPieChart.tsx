@@ -46,9 +46,10 @@ export default function CashFlowPieChart({ cashFlow, childList = [] }: Props) {
       : sum;
   }, 0);
 
+  // 月額通常返済は calculateCashFlow が計算した monthlyRegularPayment を使用（ローン返済グラフと一致）
   const monthly = {
     income: Math.round(annualIncome / 12),
-    loan: Math.round(row.loanPayment / 12),
+    loan: Math.round(row.monthlyRegularPayment * 10) / 10,
     living: Math.round(row.livingCost / 12),
     children: Math.round(monthlyChildExtra),
     deduction: Math.round(row.mortgageDeduction / 12),

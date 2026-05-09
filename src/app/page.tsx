@@ -12,6 +12,8 @@ import ChildrenSimulator from "@/components/household/ChildrenSimulator";
 import AssetsForm from "@/components/household/AssetsForm";
 import LifeEventsTable from "@/components/household/LifeEventsTable";
 import AssetGrowthChart from "@/components/household/AssetGrowthChart";
+import FinancialBreakdownChart from "@/components/household/FinancialBreakdownChart";
+import IncomeEventsTable from "@/components/household/IncomeEventsTable";
 import SavedList from "@/components/saved/SavedList";
 import { calculateLoan, calculateCashFlow } from "@/lib/calculations";
 import type {
@@ -43,6 +45,7 @@ const DEFAULT_LOAN_INPUT: LoanInput = {
   mortgageDeductionYears: 13,
   mortgageDeductionMaxPerPerson: 0,
   mortgageDeductionClaimants: 1,
+  mortgageDeductionLoanType: "joint",
 };
 
 const DEFAULT_INCOME_INPUT: IncomeInput = {
@@ -74,6 +77,7 @@ const DEFAULT_HOUSEHOLD_INPUT: HouseholdInput = {
     { id: "2", eventName: "自宅リフォーム", year: 15, amount: 200 },
     { id: "3", eventName: "家電買い替え", year: 10, amount: 50 },
   ],
+  incomeEvents: [],
 };
 
 export default function Home() {
@@ -93,8 +97,9 @@ export default function Home() {
       loanInput.mortgageDeductionYears,
       loanInput.mortgageDeductionMaxPerPerson ?? 0,
       loanInput.mortgageDeductionClaimants ?? 1,
+      loanInput.mortgageDeductionLoanType ?? "joint",
     ),
-    [loanResult, incomeInput, householdInput.children, loanInput.mortgageDeductionRate, loanInput.mortgageDeductionYears, loanInput.mortgageDeductionMaxPerPerson, loanInput.mortgageDeductionClaimants]
+    [loanResult, incomeInput, householdInput.children, loanInput.mortgageDeductionRate, loanInput.mortgageDeductionYears, loanInput.mortgageDeductionMaxPerPerson, loanInput.mortgageDeductionClaimants, loanInput.mortgageDeductionLoanType]
   );
 
   const currentYear = new Date().getFullYear();
@@ -227,6 +232,7 @@ export default function Home() {
           year: e.year,
           amount: e.amount,
         })),
+        incomeEvents: [],
       });
     }
     setActiveTab("loan");
@@ -307,6 +313,7 @@ export default function Home() {
                 mortgageDeductionYears={loanInput.mortgageDeductionYears}
                 mortgageDeductionMaxPerPerson={loanInput.mortgageDeductionMaxPerPerson}
                 mortgageDeductionClaimants={loanInput.mortgageDeductionClaimants}
+                mortgageDeductionLoanType={loanInput.mortgageDeductionLoanType}
               />
             </div>
           </>
@@ -325,6 +332,13 @@ export default function Home() {
               />
             </div>
 
+            <IncomeEventsTable
+              events={householdInput.incomeEvents ?? []}
+              onChange={(incomeEvents) =>
+                setHouseholdInput((prev) => ({ ...prev, incomeEvents }))
+              }
+            />
+
             <ChildrenSimulator
               childList={householdInput.children}
               currentYear={currentYear}
@@ -336,7 +350,7 @@ export default function Home() {
 
             <div className="bg-white rounded-lg shadow-sm p-6">
               <h2 className="text-base font-semibold text-gray-700 mb-4">
-                資産推移グラフ
+                資産推移グラフ（総資産 vs ローン残債）
               </h2>
               <AssetGrowthChart
                 householdInput={householdInput}
@@ -347,6 +361,24 @@ export default function Home() {
                 mortgageDeductionYears={loanInput.mortgageDeductionYears}
                 mortgageDeductionMaxPerPerson={loanInput.mortgageDeductionMaxPerPerson}
                 mortgageDeductionClaimants={loanInput.mortgageDeductionClaimants}
+                mortgageDeductionLoanType={loanInput.mortgageDeductionLoanType}
+              />
+            </div>
+
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <h2 className="text-base font-semibold text-gray-700 mb-2">
+                金融資産内訳グラフ（現金 + 投資資産）
+              </h2>
+              <p className="text-xs text-gray-400 mb-4">現金と投資資産の積み上がりを確認できます。月間投資額を「資産・投資情報」で設定してください。</p>
+              <FinancialBreakdownChart
+                householdInput={householdInput}
+                loanResult={loanResult}
+                incomeInput={incomeInput}
+                mortgageDeductionRate={loanInput.mortgageDeductionRate}
+                mortgageDeductionYears={loanInput.mortgageDeductionYears}
+                mortgageDeductionMaxPerPerson={loanInput.mortgageDeductionMaxPerPerson}
+                mortgageDeductionClaimants={loanInput.mortgageDeductionClaimants}
+                mortgageDeductionLoanType={loanInput.mortgageDeductionLoanType}
               />
             </div>
           </>

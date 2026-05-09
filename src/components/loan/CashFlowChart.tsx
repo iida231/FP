@@ -3,6 +3,7 @@
 import { useState } from "react";
 import {
   ComposedChart,
+  BarChart,
   Bar,
   Line,
   Cell,
@@ -11,6 +12,7 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
+  ReferenceLine,
   ResponsiveContainer,
 } from "recharts";
 import { calculateCashFlow } from "@/lib/calculations";
@@ -24,9 +26,10 @@ type Props = {
   mortgageDeductionYears?: number;
   mortgageDeductionMaxPerPerson?: number;
   mortgageDeductionClaimants?: number;
+  mortgageDeductionLoanType?: 'joint' | 'pair';
 };
 
-export default function CashFlowChart({ loanResult, incomeInput, childList, mortgageDeductionRate = 0, mortgageDeductionYears = 0, mortgageDeductionMaxPerPerson = 0, mortgageDeductionClaimants = 1 }: Props) {
+export default function CashFlowChart({ loanResult, incomeInput, childList, mortgageDeductionRate = 0, mortgageDeductionYears = 0, mortgageDeductionMaxPerPerson = 0, mortgageDeductionClaimants = 1, mortgageDeductionLoanType = 'joint' }: Props) {
   const [showTable, setShowTable] = useState(true);
 
   if (!loanResult.annual || loanResult.annual.length === 0) {
@@ -45,6 +48,7 @@ export default function CashFlowChart({ loanResult, incomeInput, childList, mort
     mortgageDeductionYears,
     mortgageDeductionMaxPerPerson,
     mortgageDeductionClaimants,
+    mortgageDeductionLoanType,
   );
   const hasNegativeRemainder = data.some((d) => d.remainder < 0);
 
@@ -105,11 +109,11 @@ export default function CashFlowChart({ loanResult, incomeInput, childList, mort
             ))}
           </Bar>
 
-          {/* 折れ線: 世帯収入 */}
+          {/* 折れ線: 世帯手取り */}
           <Line
             type="monotone"
-            dataKey="householdIncome"
-            name="世帯収入（万円）"
+            dataKey="householdTakeHome"
+            name="世帯手取り（万円）"
             stroke="#22c55e"
             dot={false}
             strokeWidth={2}
@@ -122,6 +126,36 @@ export default function CashFlowChart({ loanResult, incomeInput, childList, mort
           ⚠ 手残りがマイナスになる年があります
         </p>
       )}
+
+      {/* 年次収支グラフ（手残り±） */}
+      <div>
+        <h3 className="text-sm font-semibold text-gray-700 mb-2">年次収支（手残り）</h3>
+        <ResponsiveContainer width="100%" height={180}>
+          <BarChart data={data} margin={{ top: 5, right: 30, left: 10, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis
+              dataKey="year"
+              label={{ value: "年", position: "insideBottomRight", offset: -5 }}
+            />
+            <YAxis
+              label={{ value: "万円", angle: -90, position: "insideLeft", offset: 10 }}
+            />
+            <Tooltip
+              formatter={(value: number) => `${value.toLocaleString()} 万円`}
+              labelFormatter={(label) => `${label} 年目`}
+            />
+            <ReferenceLine y={0} stroke="#6b7280" />
+            <Bar dataKey="remainder" name="年間収支（万円）">
+              {data.map((entry, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={entry.remainder >= 0 ? "#22c55e" : "#ef4444"}
+                />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
 
       {/* 年次収入テーブルの表示切替 */}
       <div>
@@ -144,7 +178,7 @@ export default function CashFlowChart({ loanResult, incomeInput, childList, mort
                 <th className="border border-gray-200 px-3 py-2 text-right whitespace-nowrap">夫の年収（万円）</th>
                 <th className="border border-gray-200 px-3 py-2 text-right whitespace-nowrap">妻の年齢</th>
                 <th className="border border-gray-200 px-3 py-2 text-right whitespace-nowrap">妻の年収（万円）</th>
-                <th className="border border-gray-200 px-3 py-2 text-right whitespace-nowrap">世帯収入（万円）</th>
+                <th className="border border-gray-200 px-3 py-2 text-right whitespace-nowrap">世帯手取り（万円）</th>
                 <th className="border border-gray-200 px-3 py-2 text-right whitespace-nowrap">子ども費用（万円）</th>
                 <th className="border border-gray-200 px-3 py-2 text-right whitespace-nowrap">ローン控除（万円）</th>
                 <th className="border border-gray-200 px-3 py-2 text-right whitespace-nowrap">手残り（万円）</th>
@@ -183,7 +217,7 @@ export default function CashFlowChart({ loanResult, incomeInput, childList, mort
                     {row.wifeIncome.toLocaleString()}
                   </td>
                   <td className="border border-gray-200 px-3 py-1.5 text-right font-medium">
-                    {row.householdIncome.toLocaleString()}
+                    {row.householdTakeHome.toLocaleString()}
                   </td>
                   <td className="border border-gray-200 px-3 py-1.5 text-right text-violet-700">
                     {row.childrenCost > 0 ? row.childrenCost.toLocaleString() : "—"}

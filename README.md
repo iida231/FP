@@ -24,8 +24,14 @@
 # 依存パッケージをインストール
 npm install
 
-# データベースを初期化（初回のみ）
+# Prisma クライアント生成（スキーマ変更後は必ず実行）
+npx prisma generate
+
+# データベースを初期化（初回のみ / スキーマ変更後は npx prisma db push を実行）
 npx prisma db push
+
+# （任意）マイグレーションを作成したい場合
+npx prisma migrate dev --name init
 
 # 開発サーバーを起動
 npm run dev
@@ -139,8 +145,12 @@ npm run dev          # 開発サーバー起動 (localhost:3000)
 npm test             # ユニットテスト実行（計算ロジック）
 npm run test:e2e     # E2Eテスト実行（Playwright、開発サーバーが自動起動）
 npm run build        # プロダクションビルド
-npx prisma studio    # DB ブラウザを起動 (localhost:5555)
-npx prisma db push   # スキーマ変更をDBに反映
+
+# Prisma / DB
+npx prisma generate  # Prisma クライアントを生成（スキーマ変更後に必須）
+npx prisma db push    # スキーマをデータベースに反映（軽量・即時反映）
+npx prisma migrate dev --name <name>  # マイグレーションを作成・適用（履歴管理が必要な場合）
+npx prisma studio     # DB ブラウザを起動 (http://localhost:5555)
 ```
 
 ---

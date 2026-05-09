@@ -166,6 +166,41 @@ export default function LoanForm({ value, onChange }: Props) {
             />
           </div>
         </div>
+
+        {/* ペアローン / 連帯債務の選択（2人申告時のみ表示） */}
+        {(value.mortgageDeductionClaimants ?? 1) >= 2 && (
+          <div className="space-y-1 mt-2">
+            <label className="block text-xs text-gray-600">ローン形態（2人申告の場合）</label>
+            <div className="flex rounded-lg border border-gray-300 overflow-hidden text-sm">
+              <button
+                type="button"
+                onClick={() => handleField("mortgageDeductionLoanType", "joint")}
+                className={`flex-1 px-3 py-1.5 transition-colors ${
+                  (value.mortgageDeductionLoanType ?? "joint") === "joint"
+                    ? "bg-blue-500 text-white font-medium"
+                    : "bg-white text-gray-600 hover:bg-gray-100"
+                }`}
+              >
+                連帯債務・収入合算
+              </button>
+              <button
+                type="button"
+                onClick={() => handleField("mortgageDeductionLoanType", "pair")}
+                className={`flex-1 px-3 py-1.5 transition-colors ${
+                  value.mortgageDeductionLoanType === "pair"
+                    ? "bg-blue-500 text-white font-medium"
+                    : "bg-white text-gray-600 hover:bg-gray-100"
+                }`}
+              >
+                ペアローン
+              </button>
+            </div>
+            <p className="text-xs text-gray-400">
+              連帯債務: 借入金額は世帯合計（控除 = 残高 × 率）。ペアローン: 借入金額は1人分（控除 = 残高 × 率 × 2人）。
+            </p>
+          </div>
+        )}
+
         <p className="text-xs text-gray-400">年末ローン残高 × 控除率を毎年税還付として計上します。0.7%・13年が一般的です（0に設定すると適用なし）。中古物件などで一人当たりの控除上限が設定されている場合はここで指定してください。</p>
       </div>
 

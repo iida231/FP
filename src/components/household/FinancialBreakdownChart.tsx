@@ -1,8 +1,8 @@
 "use client";
 
 import {
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -12,51 +12,11 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import type { HouseholdInput, IncomeInput, LoanResult } from "@/types";
-import { getSchoolStage } from "@/lib/educationCosts";
 import { calculateAssets } from "@/lib/calculations";
-
-// 子どもの学校段階が変わる年（保育園・小学校・中学・高校・大学入学）を返す
-function getSchoolTransitionYears(
-  householdInput: HouseholdInput,
-  loanTermYears: number
-): { year: number; label: string }[] {
-  const baseYear = new Date().getFullYear();
-  const transitions: { year: number; label: string }[] = [];
-
-  const stageLabels: Record<string, string> = {
-    nursing: "保育園入園",
-    elementary: "小学校入学",
-    middle: "中学入学",
-    high: "高校入学",
-    university: "大学入学",
-  };
-
-  // 学校段階が始まる年齢のリスト
-  const transitionAges = [0, 6, 12, 15, 18];
-
-  householdInput.children.forEach((child) => {
-    transitionAges.forEach((age) => {
-      const calendarYear = child.birthYear + age;
-      const loanYear = calendarYear - baseYear;
-      if (loanYear >= 1 && loanYear <= loanTermYears) {
-        const stage = getSchoolStage(age);
-        if (stage) {
-          transitions.push({
-            year: loanYear,
-            label: `${child.name || "子ども"} ${stageLabels[stage]}`,
-          });
-        }
-      }
-    });
-  });
-
-  return transitions;
-}
 
 type Props = {
   householdInput: HouseholdInput;
   loanResult: LoanResult;
-  currentYear: number;
   incomeInput: IncomeInput;
   mortgageDeductionRate?: number;
   mortgageDeductionYears?: number;
@@ -65,7 +25,7 @@ type Props = {
   mortgageDeductionLoanType?: 'joint' | 'pair';
 };
 
-export default function AssetGrowthChart({
+export default function FinancialBreakdownChart({
   householdInput,
   loanResult,
   incomeInput,
@@ -75,7 +35,6 @@ export default function AssetGrowthChart({
   mortgageDeductionClaimants = 1,
   mortgageDeductionLoanType = 'joint',
 }: Props) {
-  // データが空の場合はフォールバック表示
   if (!loanResult.annual || loanResult.annual.length === 0) {
     return (
       <div className="flex items-center justify-center h-64 text-gray-400">
@@ -96,17 +55,16 @@ export default function AssetGrowthChart({
   );
   const loanTermYears = loanResult.annual.length;
 
-  // ライフイベントのマーカー
   const lifeEventMarkers = householdInput.lifeEvents.filter(
     (e) => e.year >= 1 && e.year <= loanTermYears
   );
-
-  // 学校段階変化のマーカー
-  const schoolMarkers = getSchoolTransitionYears(householdInput, loanTermYears);
+  const incomeEventMarkers = (householdInput.incomeEvents ?? []).filter(
+    (e) => e.year >= 1 && e.year <= loanTermYears
+  );
 
   return (
-    <ResponsiveContainer width="100%" height={400}>
-      <LineChart
+    <ResponsiveContainer width="100%" height={350}>
+      <AreaChart
         data={data}
         margin={{ top: 10, right: 30, left: 10, bottom: 10 }}
       >
@@ -129,45 +87,45 @@ export default function AssetGrowthChart({
         />
         <Legend />
 
-        {/* ライフイベントの参照線 */}
+        {/* ライフイベント（支出）の参照線 */}
         {lifeEventMarkers.map((event) => (
           <ReferenceLine
             key={`life-${event.id}`}
             x={event.year}
             stroke="#f97316"
             strokeDasharray="3 3"
-            label={{ value: event.eventName, angle: -90, fontSize: 11 }}
+            label={{ value: event.eventName, angle: -90, fontSize: 10 }}
           />
         ))}
 
-        {/* 学校段階変化の参照線 */}
-        {schoolMarkers.map((marker, idx) => (
+        {/* 収入イベント（退職金・売却）の参照線 */}
+        {incomeEventMarkers.map((event) => (
           <ReferenceLine
-            key={`school-${idx}`}
-            x={marker.year}
-            stroke="#f97316"
+            key={`income-${event.id}`}
+            x={event.year}
+            stroke="#22c55e"
             strokeDasharray="3 3"
-            label={{ value: marker.label, angle: -90, fontSize: 11 }}
+            label={{ value: event.eventName, angle: -90, fontSize: 10 }}
           />
         ))}
 
-        <Line
+        <Area
           type="monotone"
-          dataKey="totalAssets"
-          name="総資産（万円）"
-          stroke="#22c55e"
-          dot={false}
-          strokeWidth={2}
+          dataKey="cashAssets"
+          name="現金資産（万円）"
+          stackId="assets"
+          stroke="#9ca3af"
+          fill="#e5e7eb"
         />
-        <Line
+        <Area
           type="monotone"
-          dataKey="loanBalance"
-          name="ローン残債（万円）"
-          stroke="#ef4444"
-          dot={false}
-          strokeWidth={2}
+          dataKey="investmentAssets"
+          name="投資資産（万円）"
+          stackId="assets"
+          stroke="#3b82f6"
+          fill="#bfdbfe"
         />
-      </LineChart>
+      </AreaChart>
     </ResponsiveContainer>
   );
 }

@@ -1,20 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import type { IncomeInput } from "@/types";
+import { getTakeHomeRate } from "@/lib/calculations";
 
 type Props = {
   value: IncomeInput;
   onChange: (value: IncomeInput) => void;
 };
-
-function getTakeHomeRate(annualIncome: number): number {
-  if (annualIncome <= 200) return 0.80;
-  if (annualIncome <= 400) return 0.78;
-  if (annualIncome <= 600) return 0.75;
-  if (annualIncome <= 800) return 0.72;
-  if (annualIncome <= 1000) return 0.68;
-  return 0.65;
-}
 
 function IncomeInfo({ annualIncome, bonusMonths }: { annualIncome: number; bonusMonths: number }) {
   if (annualIncome <= 0) return null;
@@ -34,6 +27,13 @@ function IncomeInfo({ annualIncome, bonusMonths }: { annualIncome: number; bonus
 }
 
 export default function IncomeForm({ value, onChange }: Props) {
+  const [showHusbandShortWork, setShowHusbandShortWork] = useState(
+    !!(value.husbandShortWorkStartYear || value.husbandShortWorkEndYear)
+  );
+  const [showWifeShortWork, setShowWifeShortWork] = useState(
+    !!(value.wifeShortWorkStartYear || value.wifeShortWorkEndYear)
+  );
+
   function handleField<K extends keyof IncomeInput>(field: K, fieldValue: IncomeInput[K]) {
     onChange({ ...value, [field]: fieldValue });
   }
@@ -125,6 +125,58 @@ export default function IncomeForm({ value, onChange }: Props) {
             </div>
           </div>
           <IncomeInfo annualIncome={value.husbandAnnualIncome} bonusMonths={husbandBonusMonths} />
+
+          {/* 時短勤務設定 */}
+          <div className="space-y-1">
+            <button
+              type="button"
+              onClick={() => setShowHusbandShortWork((v) => !v)}
+              className="text-xs text-blue-600 hover:text-blue-800 underline"
+            >
+              {showHusbandShortWork ? "時短設定を閉じる" : "+ 時短勤務期間を設定"}
+            </button>
+            {showHusbandShortWork && (
+              <div className="bg-orange-50 rounded-lg p-3 space-y-2">
+                <p className="text-xs font-semibold text-orange-700">時短勤務（夫）</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-xs text-gray-600">開始年（西暦）</label>
+                    <input
+                      type="number"
+                      min={2020}
+                      max={2100}
+                      value={value.husbandShortWorkStartYear ?? ""}
+                      onChange={(e) => handleField("husbandShortWorkStartYear", e.target.value ? Number(e.target.value) : undefined)}
+                      className="block w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600">終了年（西暦）</label>
+                    <input
+                      type="number"
+                      min={2020}
+                      max={2100}
+                      value={value.husbandShortWorkEndYear ?? ""}
+                      onChange={(e) => handleField("husbandShortWorkEndYear", e.target.value ? Number(e.target.value) : undefined)}
+                      className="block w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-600">時短中の給料比率（%）</label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    step={5}
+                    value={value.husbandShortWorkRatio != null ? Math.round(value.husbandShortWorkRatio * 100) : ""}
+                    onChange={(e) => handleField("husbandShortWorkRatio", e.target.value ? Number(e.target.value) / 100 : undefined)}
+                    className="block w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* 妻 */}
@@ -205,6 +257,58 @@ export default function IncomeForm({ value, onChange }: Props) {
             </div>
           </div>
           <IncomeInfo annualIncome={value.wifeAnnualIncome} bonusMonths={wifeBonusMonths} />
+
+          {/* 時短勤務設定 */}
+          <div className="space-y-1">
+            <button
+              type="button"
+              onClick={() => setShowWifeShortWork((v) => !v)}
+              className="text-xs text-blue-600 hover:text-blue-800 underline"
+            >
+              {showWifeShortWork ? "時短設定を閉じる" : "+ 時短勤務期間を設定"}
+            </button>
+            {showWifeShortWork && (
+              <div className="bg-orange-50 rounded-lg p-3 space-y-2">
+                <p className="text-xs font-semibold text-orange-700">時短勤務（妻）</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-xs text-gray-600">開始年（西暦）</label>
+                    <input
+                      type="number"
+                      min={2020}
+                      max={2100}
+                      value={value.wifeShortWorkStartYear ?? ""}
+                      onChange={(e) => handleField("wifeShortWorkStartYear", e.target.value ? Number(e.target.value) : undefined)}
+                      className="block w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600">終了年（西暦）</label>
+                    <input
+                      type="number"
+                      min={2020}
+                      max={2100}
+                      value={value.wifeShortWorkEndYear ?? ""}
+                      onChange={(e) => handleField("wifeShortWorkEndYear", e.target.value ? Number(e.target.value) : undefined)}
+                      className="block w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-600">時短中の給料比率（%）</label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    step={5}
+                    value={value.wifeShortWorkRatio != null ? Math.round(value.wifeShortWorkRatio * 100) : ""}
+                    onChange={(e) => handleField("wifeShortWorkRatio", e.target.value ? Number(e.target.value) / 100 : undefined)}
+                    className="block w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
