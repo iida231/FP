@@ -18,11 +18,27 @@ const STAGE_CONFIG: {
   ageLabel: string;
   years: number;
   customKey: keyof ChildInput;
+  extraKey: keyof ChildInput;
+  extracurricularKey: keyof ChildInput;
 }[] = [
-  { key: "nursing",    label: "保育園", ageLabel: "0〜5歳",  years: 6, customKey: "customNursingCost" },
-  { key: "elementary", label: "小学校", ageLabel: "6〜11歳", years: 6, customKey: "customElementaryCost" },
-  { key: "middle",     label: "中学校", ageLabel: "12〜14歳",years: 3, customKey: "customMiddleCost" },
-  { key: "high",       label: "高校",   ageLabel: "15〜17歳",years: 3, customKey: "customHighCost" },
+  { key: "nursing",    label: "保育園", ageLabel: "0〜5歳",  years: 6, customKey: "customNursingCost",    extraKey: "extraMonthlyLivingCostNursing",    extracurricularKey: "monthlyExtracurricularNursing" },
+  { key: "elementary", label: "小学校", ageLabel: "6〜11歳", years: 6, customKey: "customElementaryCost", extraKey: "extraMonthlyLivingCostElementary", extracurricularKey: "monthlyExtracurricularElementary" },
+  { key: "middle",     label: "中学校", ageLabel: "12〜14歳",years: 3, customKey: "customMiddleCost",     extraKey: "extraMonthlyLivingCostMiddle",     extracurricularKey: "monthlyExtracurricularMiddle" },
+  { key: "high",       label: "高校",   ageLabel: "15〜17歳",years: 3, customKey: "customHighCost",       extraKey: "extraMonthlyLivingCostHigh",       extracurricularKey: "monthlyExtracurricularHigh" },
+];
+
+const EXTRA_STAGE_CONFIG: {
+  label: string;
+  ageLabel: string;
+  years: number;
+  extraKey: keyof ChildInput;
+  extracurricularKey: keyof ChildInput;
+}[] = [
+  { label: "保育園", ageLabel: "0〜5歳",  years: 6, extraKey: "extraMonthlyLivingCostNursing",    extracurricularKey: "monthlyExtracurricularNursing" },
+  { label: "小学校", ageLabel: "6〜11歳", years: 6, extraKey: "extraMonthlyLivingCostElementary", extracurricularKey: "monthlyExtracurricularElementary" },
+  { label: "中学校", ageLabel: "12〜14歳",years: 3, extraKey: "extraMonthlyLivingCostMiddle",     extracurricularKey: "monthlyExtracurricularMiddle" },
+  { label: "高校",   ageLabel: "15〜17歳",years: 3, extraKey: "extraMonthlyLivingCostHigh",       extracurricularKey: "monthlyExtracurricularHigh" },
+  { label: "大学",   ageLabel: "18〜21歳",years: 4, extraKey: "extraMonthlyLivingCostUniversity", extracurricularKey: "monthlyExtracurricularUniversity" },
 ];
 
 const UNIVERSITY_OPTIONS: { value: ChildInput["university"]; label: string }[] = [
@@ -67,7 +83,10 @@ export default function ChildCard({ child, currentYear, onChange, onRemove }: Pr
     child.customHighCost * 3 +
     child.customUniversityCost * 4;
 
-  const extraTotal = (child.extraMonthlyLivingCost + child.monthlyExtracurricular) * 12 * 22;
+  const extraTotal = EXTRA_STAGE_CONFIG.reduce((sum, s) => {
+    const extra = (child[s.extraKey] as number ?? 0) + (child[s.extracurricularKey] as number ?? 0);
+    return sum + extra * 12 * s.years;
+  }, 0);
   const grandTotal = educationTotal + extraTotal;
 
   return (
@@ -211,32 +230,54 @@ export default function ChildCard({ child, currentYear, onChange, onRemove }: Pr
         </div>
       </div>
 
-      {/* 追加費用 */}
+      {/* 追加費用（段階別） */}
       <div className="bg-green-50 rounded-lg p-3 space-y-2">
-        <p className="text-xs font-semibold text-green-700">追加費用（0〜21歳まで毎年適用）</p>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1">
-            <label className="block text-xs text-gray-600">追加生活費（万円/月）</label>
-            <input
-              type="number"
-              step={0.5}
-              min={0}
-              value={child.extraMonthlyLivingCost}
-              onChange={(e) => handleField("extraMonthlyLivingCost", Number(e.target.value))}
-              className="block w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="block text-xs text-gray-600">習い事費（万円/月）</label>
-            <input
-              type="number"
-              step={0.5}
-              min={0}
-              value={child.monthlyExtracurricular}
-              onChange={(e) => handleField("monthlyExtracurricular", Number(e.target.value))}
-              className="block w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
-            />
-          </div>
+        <p className="text-xs font-semibold text-green-700">追加費用（段階別・万円/月）</p>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="text-gray-500">
+                <th className="text-left py-1 pr-2 font-medium w-16">段階</th>
+                <th className="text-left py-1 px-1 font-medium text-gray-400 text-xs">年齢</th>
+                <th className="text-center py-1 px-1 font-medium">追加生活費</th>
+                <th className="text-center py-1 px-1 font-medium">習い事費</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-green-100">
+              {EXTRA_STAGE_CONFIG.map((s) => (
+                <tr key={s.label}>
+                  <td className="py-1.5 pr-2 font-medium text-gray-700">{s.label}</td>
+                  <td className="py-1.5 px-1 text-gray-400">{s.ageLabel}</td>
+                  <td className="py-1.5 px-1">
+                    <div className="flex items-center gap-0.5">
+                      <input
+                        type="number"
+                        step={0.5}
+                        min={0}
+                        value={child[s.extraKey] as number ?? 0}
+                        onChange={(e) => handleField(s.extraKey, Number(e.target.value))}
+                        className="w-16 border border-gray-300 rounded px-1.5 py-1 text-right focus:outline-none focus:ring-1 focus:ring-green-400 bg-white"
+                      />
+                      <span className="text-gray-400 text-xs">万</span>
+                    </div>
+                  </td>
+                  <td className="py-1.5 px-1">
+                    <div className="flex items-center gap-0.5">
+                      <input
+                        type="number"
+                        step={0.5}
+                        min={0}
+                        value={child[s.extracurricularKey] as number ?? 0}
+                        onChange={(e) => handleField(s.extracurricularKey, Number(e.target.value))}
+                        className="w-16 border border-gray-300 rounded px-1.5 py-1 text-right focus:outline-none focus:ring-1 focus:ring-green-400 bg-white"
+                      />
+                      <span className="text-gray-400 text-xs">万</span>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -274,14 +315,19 @@ export default function ChildCard({ child, currentYear, onChange, onRemove }: Pr
               <td className="px-3 py-1.5 font-semibold text-blue-800" colSpan={4}>教育費合計</td>
               <td className="px-3 py-1.5 text-right font-bold text-blue-800">{educationTotal.toLocaleString()}万</td>
             </tr>
-            {(child.extraMonthlyLivingCost > 0 || child.monthlyExtracurricular > 0) && (
-              <tr>
-                <td className="px-3 py-1.5 text-gray-600" colSpan={2}>追加費用</td>
-                <td className="px-3 py-1.5 text-right text-gray-600">{(child.extraMonthlyLivingCost + child.monthlyExtracurricular).toLocaleString()}万/月</td>
-                <td className="px-3 py-1.5 text-right text-gray-400">×22年</td>
-                <td className="px-3 py-1.5 text-right font-semibold">{Math.round(extraTotal).toLocaleString()}万</td>
-              </tr>
-            )}
+            {extraTotal > 0 && EXTRA_STAGE_CONFIG.map((s) => {
+              const monthly = (child[s.extraKey] as number ?? 0) + (child[s.extracurricularKey] as number ?? 0);
+              if (monthly === 0) return null;
+              return (
+                <tr key={s.label}>
+                  <td className="px-3 py-1.5 text-gray-600">{s.label}追加</td>
+                  <td className="px-3 py-1.5 text-gray-400">{s.ageLabel}</td>
+                  <td className="px-3 py-1.5 text-right text-gray-600">{monthly.toLocaleString()}万/月</td>
+                  <td className="px-3 py-1.5 text-right text-gray-400">×{s.years}年</td>
+                  <td className="px-3 py-1.5 text-right font-semibold">{Math.round(monthly * 12 * s.years).toLocaleString()}万</td>
+                </tr>
+              );
+            })}
             <tr className="bg-green-50">
               <td className="px-3 py-2 font-bold text-green-800" colSpan={4}>総合計</td>
               <td className="px-3 py-2 text-right font-bold text-green-800 text-sm">{Math.round(grandTotal).toLocaleString()}万</td>

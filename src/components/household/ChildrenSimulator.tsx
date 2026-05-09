@@ -12,6 +12,7 @@ import {
   Tooltip,
 } from "recharts";
 import type { ChildInput } from "@/types";
+import { getExtraMonthlyForAge } from "@/lib/calculations";
 import ChildCard from "./ChildCard";
 import { getAnnualEducationCostCustom, getSchoolStage, EDUCATION_COSTS } from "@/lib/educationCosts";
 
@@ -61,8 +62,16 @@ function createDefaultChild(name: string, currentYear: number): ChildInput {
     university: "NATIONAL",
     husbandParentalLeaveMonths: 0,
     wifeParentalLeaveMonths: 12,
-    extraMonthlyLivingCost: 2,
-    monthlyExtracurricular: 0,
+    extraMonthlyLivingCostNursing:    2,
+    extraMonthlyLivingCostElementary: 2,
+    extraMonthlyLivingCostMiddle:     2,
+    extraMonthlyLivingCostHigh:       2,
+    extraMonthlyLivingCostUniversity: 2,
+    monthlyExtracurricularNursing:    0,
+    monthlyExtracurricularElementary: 0,
+    monthlyExtracurricularMiddle:     0,
+    monthlyExtracurricularHigh:       0,
+    monthlyExtracurricularUniversity: 0,
     customNursingCost:    EDUCATION_COSTS.nursing.PUBLIC,
     customElementaryCost: EDUCATION_COSTS.elementary.PUBLIC,
     customMiddleCost:     EDUCATION_COSTS.middle.PUBLIC,
@@ -125,9 +134,7 @@ export default function ChildrenSimulator({
         const childName = child.name || child.id;
         const edu = getAnnualEducationCostCustom(child, year);
         const age = year - child.birthYear;
-        const extra = (age >= 0 && age <= 21)
-          ? ((child.extraMonthlyLivingCost ?? 0) + (child.monthlyExtracurricular ?? 0)) * 12
-          : 0;
+        const extra = getExtraMonthlyForAge(child, age) * 12;
         row[`${childName}_edu`] = edu;
         row[`${childName}_extra`] = extra;
       });

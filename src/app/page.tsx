@@ -62,6 +62,8 @@ const DEFAULT_INCOME_INPUT: IncomeInput = {
   husbandWinterBonusMonths: 0,
   wifeSummerBonusMonths: 0,
   wifeWinterBonusMonths: 0,
+  husbandShortWorkPeriods: [],
+  wifeShortWorkPeriods: [],
 };
 
 const DEFAULT_HOUSEHOLD_INPUT: HouseholdInput = {
@@ -147,8 +149,14 @@ export default function Home() {
             husbandWinterBonusMonths: incomeInput.husbandWinterBonusMonths,
             wifeSummerBonusMonths: incomeInput.wifeSummerBonusMonths,
             wifeWinterBonusMonths: incomeInput.wifeWinterBonusMonths,
-            children: householdInput.children.map(({ name: n, birthYear, birthMonth, nursing, elementary, middle, high, university, husbandParentalLeaveMonths, wifeParentalLeaveMonths, extraMonthlyLivingCost, monthlyExtracurricular, customNursingCost, customElementaryCost, customMiddleCost, customHighCost, customUniversityCost }) => ({
-              name: n, birthYear, birthMonth, nursing, elementary, middle, high, university, husbandParentalLeaveMonths, wifeParentalLeaveMonths, extraMonthlyLivingCost, monthlyExtracurricular, customNursingCost, customElementaryCost, customMiddleCost, customHighCost, customUniversityCost,
+            children: householdInput.children.map((c) => ({
+              name: c.name, birthYear: c.birthYear, birthMonth: c.birthMonth,
+              nursing: c.nursing, elementary: c.elementary, middle: c.middle, high: c.high, university: c.university,
+              husbandParentalLeaveMonths: c.husbandParentalLeaveMonths, wifeParentalLeaveMonths: c.wifeParentalLeaveMonths,
+              // 段階別追加費用の平均をDBに保存（後方互換）
+              extraMonthlyLivingCost: Math.round(((c.extraMonthlyLivingCostNursing ?? 0) + (c.extraMonthlyLivingCostElementary ?? 0) + (c.extraMonthlyLivingCostMiddle ?? 0) + (c.extraMonthlyLivingCostHigh ?? 0) + (c.extraMonthlyLivingCostUniversity ?? 0)) / 5 * 10) / 10,
+              monthlyExtracurricular: Math.round(((c.monthlyExtracurricularNursing ?? 0) + (c.monthlyExtracurricularElementary ?? 0) + (c.monthlyExtracurricularMiddle ?? 0) + (c.monthlyExtracurricularHigh ?? 0) + (c.monthlyExtracurricularUniversity ?? 0)) / 5 * 10) / 10,
+              customNursingCost: c.customNursingCost, customElementaryCost: c.customElementaryCost, customMiddleCost: c.customMiddleCost, customHighCost: c.customHighCost, customUniversityCost: c.customUniversityCost,
             })),
             lifeEvents: householdInput.lifeEvents.map(({ eventName, year, amount }) => ({
               eventName, year, amount,
@@ -198,6 +206,8 @@ export default function Home() {
         husbandWinterBonusMonths: detail.household.husbandWinterBonusMonths ?? 0,
         wifeSummerBonusMonths: detail.household.wifeSummerBonusMonths ?? 0,
         wifeWinterBonusMonths: detail.household.wifeWinterBonusMonths ?? 0,
+        husbandShortWorkPeriods: [],
+        wifeShortWorkPeriods: [],
       });
       setHouseholdInput({
         husbandCashAssets: detail.household.husbandCashAssets ?? 0,
@@ -218,8 +228,17 @@ export default function Home() {
           university: c.university,
           husbandParentalLeaveMonths: c.husbandParentalLeaveMonths ?? 0,
           wifeParentalLeaveMonths: c.wifeParentalLeaveMonths ?? 12,
-          extraMonthlyLivingCost: c.extraMonthlyLivingCost ?? 2,
-          monthlyExtracurricular: c.monthlyExtracurricular ?? 0,
+          // DBには単一値で保存されているため、読み込み時は全段階に同じ値を設定
+          extraMonthlyLivingCostNursing:    c.extraMonthlyLivingCost ?? 2,
+          extraMonthlyLivingCostElementary: c.extraMonthlyLivingCost ?? 2,
+          extraMonthlyLivingCostMiddle:     c.extraMonthlyLivingCost ?? 2,
+          extraMonthlyLivingCostHigh:       c.extraMonthlyLivingCost ?? 2,
+          extraMonthlyLivingCostUniversity: c.extraMonthlyLivingCost ?? 2,
+          monthlyExtracurricularNursing:    c.monthlyExtracurricular ?? 0,
+          monthlyExtracurricularElementary: c.monthlyExtracurricular ?? 0,
+          monthlyExtracurricularMiddle:     c.monthlyExtracurricular ?? 0,
+          monthlyExtracurricularHigh:       c.monthlyExtracurricular ?? 0,
+          monthlyExtracurricularUniversity: c.monthlyExtracurricular ?? 0,
           customNursingCost:    c.customNursingCost    ?? 19,
           customElementaryCost: c.customElementaryCost ?? 5,
           customMiddleCost:     c.customMiddleCost     ?? 49,

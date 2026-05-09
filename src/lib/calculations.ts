@@ -12,6 +12,16 @@ import type {
 } from "@/types";
 import { getAnnualEducationCost, getAnnualEducationCostCustom } from "./educationCosts";
 
+// 子どもの年齢に応じた段階別追加費用（追加生活費 + 習い事費）を返す
+export function getExtraMonthlyForAge(child: ChildInput, age: number): number {
+  if (age < 0 || age > 21) return 0;
+  if (age <= 5)  return (child.extraMonthlyLivingCostNursing    ?? 0) + (child.monthlyExtracurricularNursing    ?? 0);
+  if (age <= 11) return (child.extraMonthlyLivingCostElementary ?? 0) + (child.monthlyExtracurricularElementary ?? 0);
+  if (age <= 14) return (child.extraMonthlyLivingCostMiddle     ?? 0) + (child.monthlyExtracurricularMiddle     ?? 0);
+  if (age <= 17) return (child.extraMonthlyLivingCostHigh       ?? 0) + (child.monthlyExtracurricularHigh       ?? 0);
+  return (child.extraMonthlyLivingCostUniversity ?? 0) + (child.monthlyExtracurricularUniversity ?? 0);
+}
+
 // 各月に適用する年利(%)を返すヘルパー
 function getRateForMonth(month: number, ratePeriods: RatePeriodInput[]): number {
   const year = Math.ceil(month / 12);
@@ -217,12 +227,8 @@ export function calculateCashFlow(
     husbandWinterBonusMonths = 0,
     wifeSummerBonusMonths = 0,
     wifeWinterBonusMonths = 0,
-    husbandShortWorkStartYear,
-    husbandShortWorkEndYear,
-    husbandShortWorkRatio,
-    wifeShortWorkStartYear,
-    wifeShortWorkEndYear,
-    wifeShortWorkRatio,
+    husbandShortWorkPeriods = [],
+    wifeShortWorkPeriods = [],
   } = incomeInput;
 
   const husbandBonusMonths = husbandSummerBonusMonths + husbandWinterBonusMonths;
@@ -258,17 +264,11 @@ export function calculateCashFlow(
       calendarYear
     );
 
-    // 時短勤務係数
-    const husbandShortWorkFactor =
-      (husbandShortWorkStartYear && husbandShortWorkEndYear && husbandShortWorkRatio != null &&
-        calendarYear >= husbandShortWorkStartYear && calendarYear <= husbandShortWorkEndYear)
-        ? husbandShortWorkRatio
-        : 1.0;
-    const wifeShortWorkFactor =
-      (wifeShortWorkStartYear && wifeShortWorkEndYear && wifeShortWorkRatio != null &&
-        calendarYear >= wifeShortWorkStartYear && calendarYear <= wifeShortWorkEndYear)
-        ? wifeShortWorkRatio
-        : 1.0;
+    // 時短勤務係数（複数期間: 最初にマッチした期間の比率を適用）
+    const husbandShortWorkMatch = husbandShortWorkPeriods.find(p => calendarYear >= p.startYear && calendarYear <= p.endYear);
+    const husbandShortWorkFactor = husbandShortWorkMatch ? husbandShortWorkMatch.ratio : 1.0;
+    const wifeShortWorkMatch = wifeShortWorkPeriods.find(p => calendarYear >= p.startYear && calendarYear <= p.endYear);
+    const wifeShortWorkFactor = wifeShortWorkMatch ? wifeShortWorkMatch.ratio : 1.0;
 
     const husbandRetired = calendarYear >= husbandRetireCalYear;
     const wifeRetired = calendarYear >= wifeRetireCalYear;
@@ -308,9 +308,7 @@ export function calculateCashFlow(
     const childrenCost = children.reduce((sum, child) => {
       const educationCost = getAnnualEducationCostCustom(child, calendarYear);
       const age = calendarYear - child.birthYear;
-      const extraCosts = (age >= 0 && age <= 21)
-        ? ((child.extraMonthlyLivingCost ?? 0) + (child.monthlyExtracurricular ?? 0)) * 12
-        : 0;
+      const extraCosts = getExtraMonthlyForAge(child, age) * 12;
       return sum + educationCost + extraCosts;
     }, 0);
 
@@ -336,7 +334,7 @@ export function calculateCashFlow(
       : Number.MAX_SAFE_INTEGER;
     const mortgageDeduction = Math.min(rawDeduction, capTotal);
 
-    const remainder = householdIncome + mortgageDeduction - loanPayment - livingCost - childrenCost;
+    const remainder = householdTakeHome + mortgageDeduction - loanPayment - livingCost - childrenCost;
 
     return {
       year,
@@ -409,9 +407,7 @@ export function calculateAssets(
       : children.reduce((sum, child) => {
           const educationCost = getAnnualEducationCostCustom(child, calendarYear);
           const age = calendarYear - child.birthYear;
-          const extraCosts = (age >= 0 && age <= 21)
-            ? ((child.extraMonthlyLivingCost ?? 0) + (child.monthlyExtracurricular ?? 0)) * 12
-            : 0;
+          const extraCosts = getExtraMonthlyForAge(child, age) * 12;
           return sum + educationCost + extraCosts;
         }, 0);
 

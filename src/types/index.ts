@@ -1,5 +1,11 @@
 // ---- フォーム入力型 ----
 
+export type ShortWorkPeriod = {
+  startYear: number;
+  endYear: number;
+  ratio: number; // 0-1（例: 0.8 = 80%）
+};
+
 export type RatePeriodInput = {
   id: string;
   startYear: number;
@@ -36,13 +42,9 @@ export type IncomeInput = {
   husbandWinterBonusMonths: number; // 冬ボーナス月数
   wifeSummerBonusMonths: number;
   wifeWinterBonusMonths: number;
-  // 時短勤務設定
-  husbandShortWorkStartYear?: number; // 時短開始年（西暦）
-  husbandShortWorkEndYear?: number;   // 時短終了年（西暦）
-  husbandShortWorkRatio?: number;     // 時短中の給料比率（0-1）
-  wifeShortWorkStartYear?: number;
-  wifeShortWorkEndYear?: number;
-  wifeShortWorkRatio?: number;
+  // 時短勤務設定（複数期間）
+  husbandShortWorkPeriods: ShortWorkPeriod[];
+  wifeShortWorkPeriods: ShortWorkPeriod[];
 };
 
 export type ChildInput = {
@@ -57,8 +59,18 @@ export type ChildInput = {
   university: "NATIONAL" | "PRIVATE_HUMANITIES" | "PRIVATE_SCIENCE";
   husbandParentalLeaveMonths: number;
   wifeParentalLeaveMonths: number;
-  extraMonthlyLivingCost: number; // 追加月間生活費（万円）
-  monthlyExtracurricular: number; // 月間習い事費（万円）
+  // 追加生活費（段階別・万円/月）
+  extraMonthlyLivingCostNursing: number;
+  extraMonthlyLivingCostElementary: number;
+  extraMonthlyLivingCostMiddle: number;
+  extraMonthlyLivingCostHigh: number;
+  extraMonthlyLivingCostUniversity: number;
+  // 習い事費（段階別・万円/月）
+  monthlyExtracurricularNursing: number;
+  monthlyExtracurricularElementary: number;
+  monthlyExtracurricularMiddle: number;
+  monthlyExtracurricularHigh: number;
+  monthlyExtracurricularUniversity: number;
   customNursingCost: number;
   customElementaryCost: number;
   customMiddleCost: number;
@@ -168,6 +180,9 @@ export type HouseholdChildDetail = Omit<ChildInput, "id"> & {
   customMiddleCost?: number;
   customHighCost?: number;
   customUniversityCost?: number;
+  // DB互換: 旧フォーマットで保存された単一値（読み込み時に段階別フィールドへ展開）
+  extraMonthlyLivingCost?: number;
+  monthlyExtracurricular?: number;
 };
 
 export type HouseholdDetail = IncomeInput & {

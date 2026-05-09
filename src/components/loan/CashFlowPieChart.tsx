@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import type { AnnualCashFlow, ChildInput } from "@/types";
+import { getExtraMonthlyForAge } from "@/lib/calculations";
 
 type Props = {
   cashFlow: AnnualCashFlow[];
@@ -41,9 +42,7 @@ export default function CashFlowPieChart({ cashFlow, childList = [] }: Props) {
   // 月次子ども費用：追加生活費＋習い事のみ（教育費は ChildrenSimulator で別表示）
   const monthlyChildExtra = childList.reduce((sum, child) => {
     const age = row.calendarYear - child.birthYear;
-    return (age >= 0 && age <= 21)
-      ? sum + (child.extraMonthlyLivingCost ?? 0) + (child.monthlyExtracurricular ?? 0)
-      : sum;
+    return sum + getExtraMonthlyForAge(child, age);
   }, 0);
 
   // 月額通常返済は calculateCashFlow が計算した monthlyRegularPayment を使用（ローン返済グラフと一致）
