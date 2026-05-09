@@ -22,9 +22,11 @@ type Props = {
   childList: ChildInput[];
   mortgageDeductionRate?: number;
   mortgageDeductionYears?: number;
+  mortgageDeductionMaxPerPerson?: number;
+  mortgageDeductionClaimants?: number;
 };
 
-export default function CashFlowChart({ loanResult, incomeInput, childList, mortgageDeductionRate = 0, mortgageDeductionYears = 0 }: Props) {
+export default function CashFlowChart({ loanResult, incomeInput, childList, mortgageDeductionRate = 0, mortgageDeductionYears = 0, mortgageDeductionMaxPerPerson = 0, mortgageDeductionClaimants = 1 }: Props) {
   const [showTable, setShowTable] = useState(true);
 
   if (!loanResult.annual || loanResult.annual.length === 0) {
@@ -35,7 +37,15 @@ export default function CashFlowChart({ loanResult, incomeInput, childList, mort
     );
   }
 
-  const data = calculateCashFlow(loanResult, incomeInput, childList, mortgageDeductionRate, mortgageDeductionYears);
+  const data = calculateCashFlow(
+    loanResult,
+    incomeInput,
+    childList,
+    mortgageDeductionRate,
+    mortgageDeductionYears,
+    mortgageDeductionMaxPerPerson,
+    mortgageDeductionClaimants,
+  );
   const hasNegativeRemainder = data.some((d) => d.remainder < 0);
 
   return (

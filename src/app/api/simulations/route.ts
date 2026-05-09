@@ -44,6 +44,8 @@ export async function POST(request: Request) {
       bonusRepaymentPerOccurrence,
       mortgageDeductionRate,
       mortgageDeductionYears,
+      mortgageDeductionMaxPerPerson,
+      mortgageDeductionClaimants,
       ratePeriods,
       household,
     } = body as {
@@ -57,6 +59,8 @@ export async function POST(request: Request) {
       bonusRepaymentPerOccurrence: number;
       mortgageDeductionRate: number;
       mortgageDeductionYears: number;
+      mortgageDeductionMaxPerPerson?: number;
+      mortgageDeductionClaimants?: number;
       ratePeriods: { startYear: number; endYear: number; annualRate: number }[];
       household?: {
         husbandAnnualIncome: number;
@@ -117,6 +121,8 @@ export async function POST(request: Request) {
         bonusRepaymentPerOccurrence: bonusRepaymentPerOccurrence ?? 0,
         mortgageDeductionRate: mortgageDeductionRate ?? 0,
         mortgageDeductionYears: mortgageDeductionYears ?? 0,
+        mortgageDeductionMaxPerPerson: mortgageDeductionMaxPerPerson ?? 0,
+        mortgageDeductionClaimants: mortgageDeductionClaimants ?? 1,
         ratePeriods: {
           create: ratePeriods.map(({ startYear, endYear, annualRate }) => ({
             startYear,

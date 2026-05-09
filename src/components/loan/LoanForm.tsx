@@ -141,7 +141,32 @@ export default function LoanForm({ value, onChange }: Props) {
             />
           </div>
         </div>
-        <p className="text-xs text-gray-400">年末ローン残高 × 控除率を毎年税還付として計上します。0.7%・13年が一般的です（0に設定すると適用なし）。</p>
+        <div className="grid grid-cols-2 gap-3 mt-3">
+          <div className="space-y-1">
+            <label className="block text-xs text-gray-600">控除上限（一人当たり・万円）</label>
+            <input
+              type="number"
+              min={0}
+              step={100}
+              value={value.mortgageDeductionMaxPerPerson ?? 0}
+              onChange={(e) => handleField("mortgageDeductionMaxPerPerson", Number(e.target.value))}
+              className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="block text-xs text-gray-600">控除申告人数</label>
+            <input
+              type="number"
+              min={1}
+              max={2}
+              step={1}
+              value={value.mortgageDeductionClaimants ?? 1}
+              onChange={(e) => handleField("mortgageDeductionClaimants", Number(e.target.value))}
+              className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+        <p className="text-xs text-gray-400">年末ローン残高 × 控除率を毎年税還付として計上します。0.7%・13年が一般的です（0に設定すると適用なし）。中古物件などで一人当たりの控除上限が設定されている場合はここで指定してください。</p>
       </div>
 
       {/* 金利期間テーブル */}

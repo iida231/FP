@@ -187,6 +187,8 @@ export function calculateCashFlow(
   children: ChildInput[] = [],
   mortgageDeductionRate = 0,
   mortgageDeductionYears = 0,
+  mortgageDeductionMaxPerPerson = 0,
+  mortgageDeductionClaimants = 1,
 ): AnnualCashFlow[] {
   const currentYear = new Date().getFullYear();
   const {
@@ -281,9 +283,13 @@ export function calculateCashFlow(
     const livingCost = monthlyLivingCost * 12;
 
     // 住宅ローン控除（年末ローン残高 × 控除率）
-    const mortgageDeduction = (mortgageDeductionRate > 0 && year <= mortgageDeductionYears)
+    const rawDeduction = (mortgageDeductionRate > 0 && year <= mortgageDeductionYears)
       ? Math.round(ann.balance / 10000 * mortgageDeductionRate / 100)
       : 0;
+    const capTotal = mortgageDeductionMaxPerPerson > 0
+      ? mortgageDeductionMaxPerPerson * (mortgageDeductionClaimants || 1)
+      : Number.MAX_SAFE_INTEGER;
+    const mortgageDeduction = Math.min(rawDeduction, capTotal);
 
     const remainder = householdIncome + mortgageDeduction - loanPayment - livingCost - childrenCost;
 
@@ -313,6 +319,8 @@ export function calculateAssets(
   incomeInput?: IncomeInput,
   mortgageDeductionRate = 0,
   mortgageDeductionYears = 0,
+  mortgageDeductionMaxPerPerson = 0,
+  mortgageDeductionClaimants = 1,
 ): AnnualAssetRow[] {
   const {
     husbandCashAssets,

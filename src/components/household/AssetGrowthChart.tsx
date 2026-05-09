@@ -60,6 +60,8 @@ type Props = {
   incomeInput: IncomeInput;
   mortgageDeductionRate?: number;
   mortgageDeductionYears?: number;
+  mortgageDeductionMaxPerPerson?: number;
+  mortgageDeductionClaimants?: number;
 };
 
 export default function AssetGrowthChart({
@@ -68,6 +70,8 @@ export default function AssetGrowthChart({
   incomeInput,
   mortgageDeductionRate = 0,
   mortgageDeductionYears = 0,
+  mortgageDeductionMaxPerPerson = 0,
+  mortgageDeductionClaimants = 1,
 }: Props) {
   // データが空の場合はフォールバック表示
   if (!loanResult.annual || loanResult.annual.length === 0) {
@@ -78,7 +82,15 @@ export default function AssetGrowthChart({
     );
   }
 
-  const data = calculateAssets(householdInput, loanResult, incomeInput, mortgageDeductionRate, mortgageDeductionYears);
+  const data = calculateAssets(
+    householdInput,
+    loanResult,
+    incomeInput,
+    mortgageDeductionRate,
+    mortgageDeductionYears,
+    mortgageDeductionMaxPerPerson,
+    mortgageDeductionClaimants,
+  );
   const loanTermYears = loanResult.annual.length;
 
   // ライフイベントのマーカー

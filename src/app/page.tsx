@@ -41,6 +41,8 @@ const DEFAULT_LOAN_INPUT: LoanInput = {
   bonusRepaymentPerOccurrence: 0,
   mortgageDeductionRate: 0.7,
   mortgageDeductionYears: 13,
+  mortgageDeductionMaxPerPerson: 0,
+  mortgageDeductionClaimants: 1,
 };
 
 const DEFAULT_INCOME_INPUT: IncomeInput = {
@@ -83,8 +85,16 @@ export default function Home() {
 
   const loanResult = useMemo(() => calculateLoan(loanInput), [loanInput]);
   const cashFlow = useMemo(
-    () => calculateCashFlow(loanResult, incomeInput, householdInput.children, loanInput.mortgageDeductionRate, loanInput.mortgageDeductionYears),
-    [loanResult, incomeInput, householdInput.children, loanInput.mortgageDeductionRate, loanInput.mortgageDeductionYears]
+    () => calculateCashFlow(
+      loanResult,
+      incomeInput,
+      householdInput.children,
+      loanInput.mortgageDeductionRate,
+      loanInput.mortgageDeductionYears,
+      loanInput.mortgageDeductionMaxPerPerson ?? 0,
+      loanInput.mortgageDeductionClaimants ?? 1,
+    ),
+    [loanResult, incomeInput, householdInput.children, loanInput.mortgageDeductionRate, loanInput.mortgageDeductionYears, loanInput.mortgageDeductionMaxPerPerson, loanInput.mortgageDeductionClaimants]
   );
 
   const currentYear = new Date().getFullYear();
@@ -159,6 +169,8 @@ export default function Home() {
       bonusRepaymentPerOccurrence: detail.bonusRepaymentPerOccurrence ?? 0,
       mortgageDeductionRate: detail.mortgageDeductionRate ?? 0.7,
       mortgageDeductionYears: detail.mortgageDeductionYears ?? 13,
+      mortgageDeductionMaxPerPerson: detail.mortgageDeductionMaxPerPerson ?? 0,
+      mortgageDeductionClaimants: detail.mortgageDeductionClaimants ?? 1,
       ratePeriods: detail.ratePeriods.map((rp, i) => ({
         id: String(i + 1),
         startYear: rp.startYear,
@@ -293,6 +305,8 @@ export default function Home() {
                 childList={householdInput.children}
                 mortgageDeductionRate={loanInput.mortgageDeductionRate}
                 mortgageDeductionYears={loanInput.mortgageDeductionYears}
+                mortgageDeductionMaxPerPerson={loanInput.mortgageDeductionMaxPerPerson}
+                mortgageDeductionClaimants={loanInput.mortgageDeductionClaimants}
               />
             </div>
           </>
@@ -331,6 +345,8 @@ export default function Home() {
                 incomeInput={incomeInput}
                 mortgageDeductionRate={loanInput.mortgageDeductionRate}
                 mortgageDeductionYears={loanInput.mortgageDeductionYears}
+                mortgageDeductionMaxPerPerson={loanInput.mortgageDeductionMaxPerPerson}
+                mortgageDeductionClaimants={loanInput.mortgageDeductionClaimants}
               />
             </div>
           </>

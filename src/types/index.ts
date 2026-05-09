@@ -17,6 +17,8 @@ export type LoanInput = {
   bonusRepaymentPerOccurrence: number; // ボーナス返済額（1回あたり万円）、年2回適用
   mortgageDeductionRate: number;   // 住宅ローン控除率（%）
   mortgageDeductionYears: number;  // 控除期間（年）
+  mortgageDeductionMaxPerPerson?: number; // 控除上限（万円・一人当たり）
+  mortgageDeductionClaimants?: number; // 控除申告人数（例: 1 または 2）
 };
 
 export type IncomeInput = {
@@ -175,4 +177,6 @@ export type SimulationDetail = {
   bonusRepaymentPerOccurrence: number;
   mortgageDeductionRate: number;
   mortgageDeductionYears: number;
+  mortgageDeductionMaxPerPerson?: number;
+  mortgageDeductionClaimants?: number;
 };
