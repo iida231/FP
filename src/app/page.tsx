@@ -280,7 +280,7 @@ export default function Home() {
                 月間支払率
               </h2>
               <p className="text-xs text-gray-400 mb-4">年を選択して月間のローン・生活費・手残りの割合を確認できます</p>
-              <CashFlowPieChart cashFlow={cashFlow} />
+              <CashFlowPieChart cashFlow={cashFlow} childList={householdInput.children} />
             </div>
 
             <div className="bg-white rounded-lg shadow-sm p-6">

@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import type { AnnualCashFlow } from "@/types";
+import type { AnnualCashFlow, ChildInput } from "@/types";
 
 type Props = {
   cashFlow: AnnualCashFlow[];
+  childList?: ChildInput[];
 };
 
 const COLORS = {
@@ -25,7 +26,7 @@ function pct(part: number, total: number) {
   return `${((part / total) * 100).toFixed(1)}%`;
 }
 
-export default function CashFlowPieChart({ cashFlow }: Props) {
+export default function CashFlowPieChart({ cashFlow, childList = [] }: Props) {
   const [selectedYear, setSelectedYear] = useState(1);
   const [showBonus, setShowBonus] = useState(true);
 
@@ -37,11 +38,19 @@ export default function CashFlowPieChart({ cashFlow }: Props) {
   const annualIncome = showBonus ? row.householdIncome : row.householdBaseIncome;
   const bonusDiff = row.householdIncome - row.householdBaseIncome;
 
+  // 月次子ども費用：追加生活費＋習い事のみ（教育費は ChildrenSimulator で別表示）
+  const monthlyChildExtra = childList.reduce((sum, child) => {
+    const age = row.calendarYear - child.birthYear;
+    return (age >= 0 && age <= 21)
+      ? sum + (child.extraMonthlyLivingCost ?? 0) + (child.monthlyExtracurricular ?? 0)
+      : sum;
+  }, 0);
+
   const monthly = {
     income: Math.round(annualIncome / 12),
     loan: Math.round(row.loanPayment / 12),
     living: Math.round(row.livingCost / 12),
-    children: Math.round(row.childrenCost / 12),
+    children: Math.round(monthlyChildExtra),
     deduction: Math.round(row.mortgageDeduction / 12),
     // row.remainder には控除が含まれているので直接利用
     remainder: showBonus
