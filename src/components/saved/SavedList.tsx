@@ -8,6 +8,62 @@ type Props = {
   onLoadSimulation: (detail: SimulationDetail) => void;
 };
 
+function buildSaveBody(detail: SimulationDetail, name: string) {
+  return {
+    name,
+    loanAmount: detail.loanAmount,
+    termYears: detail.termYears,
+    repaymentType: detail.repaymentType,
+    useFiveYearRule: detail.useFiveYearRule,
+    use125PercentRule: detail.use125PercentRule,
+    totalPayment: detail.totalPayment,
+    bonusRepaymentPerOccurrence: detail.bonusRepaymentPerOccurrence ?? 0,
+    ratePeriods: detail.ratePeriods.map(({ startYear, endYear, annualRate }) => ({
+      startYear, endYear, annualRate,
+    })),
+    household: detail.household ? {
+      husbandAnnualIncome: detail.household.husbandAnnualIncome,
+      wifeAnnualIncome: detail.household.wifeAnnualIncome,
+      husbandRaiseRate: detail.household.husbandRaiseRate,
+      wifeRaiseRate: detail.household.wifeRaiseRate,
+      monthlyLivingCost: detail.household.monthlyLivingCost,
+      husbandAge: detail.household.husbandAge ?? 30,
+      wifeAge: detail.household.wifeAge ?? 30,
+      husbandRetirementAge: detail.household.husbandRetirementAge ?? 65,
+      wifeRetirementAge: detail.household.wifeRetirementAge ?? 65,
+      husbandCashAssets: detail.household.husbandCashAssets ?? 0,
+      husbandInvestmentAssets: detail.household.husbandInvestmentAssets ?? 0,
+      wifeCashAssets: detail.household.wifeCashAssets ?? 0,
+      wifeInvestmentAssets: detail.household.wifeInvestmentAssets ?? 0,
+      monthlyInvestment: detail.household.monthlyInvestment,
+      averageYield: detail.household.averageYield,
+      husbandSummerBonusMonths: detail.household.husbandSummerBonusMonths ?? 0,
+      husbandWinterBonusMonths: detail.household.husbandWinterBonusMonths ?? 0,
+      wifeSummerBonusMonths: detail.household.wifeSummerBonusMonths ?? 0,
+      wifeWinterBonusMonths: detail.household.wifeWinterBonusMonths ?? 0,
+      children: detail.household.children.map((c) => ({
+        name: c.name,
+        birthYear: c.birthYear,
+        birthMonth: c.birthMonth ?? 4,
+        nursing: c.nursing,
+        elementary: c.elementary,
+        middle: c.middle,
+        high: c.high,
+        university: c.university,
+        husbandParentalLeaveMonths: c.husbandParentalLeaveMonths ?? 0,
+        wifeParentalLeaveMonths: c.wifeParentalLeaveMonths ?? 12,
+        extraMonthlyLivingCost: c.extraMonthlyLivingCost ?? 2,
+        monthlyExtracurricular: c.monthlyExtracurricular ?? 0,
+      })),
+      lifeEvents: detail.household.lifeEvents.map((e) => ({
+        eventName: e.eventName,
+        year: e.year,
+        amount: e.amount,
+      })),
+    } : undefined,
+  };
+}
+
 export default function SavedList({ onLoadSimulation }: Props) {
   const [simulations, setSimulations] = useState<SimulationSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,7 +100,7 @@ export default function SavedList({ onLoadSimulation }: Props) {
     await fetch("/api/simulations", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...detail, name: detail.name + "（コピー）" }),
+      body: JSON.stringify(buildSaveBody(detail, detail.name + "（コピー）")),
     });
     fetchSimulations();
   }
@@ -60,7 +116,7 @@ export default function SavedList({ onLoadSimulation }: Props) {
     await fetch(`/api/simulations/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...detail, name: newName }),
+      body: JSON.stringify(buildSaveBody(detail, newName)),
     });
     setSimulations((prev) =>
       prev.map((s) => (s.id === id ? { ...s, name: newName } : s))

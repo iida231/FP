@@ -197,7 +197,14 @@ export function calculateCashFlow(
     wifeAge,
     husbandRetirementAge,
     wifeRetirementAge,
+    husbandSummerBonusMonths = 0,
+    husbandWinterBonusMonths = 0,
+    wifeSummerBonusMonths = 0,
+    wifeWinterBonusMonths = 0,
   } = incomeInput;
+
+  const husbandBonusMonths = husbandSummerBonusMonths + husbandWinterBonusMonths;
+  const wifeBonusMonths = wifeSummerBonusMonths + wifeWinterBonusMonths;
 
   const husbandRetireCalYear = currentYear + (husbandRetirementAge - husbandAge);
   const wifeRetireCalYear = currentYear + (wifeRetirementAge - wifeAge);
@@ -235,23 +242,43 @@ export function calculateCashFlow(
       wifeAnnualIncome * Math.pow(1 + wifeRaiseRate / 100, year - 1)
     );
 
-    const husbandIncome = husbandRetired
-      ? 0
-      : Math.round(husbandBaseIncome * husbandLeaveFactor);
-    const wifeIncome = wifeRetired
-      ? 0
-      : Math.round(wifeBaseIncome * wifeLeaveFactor);
+    // 育休・退職を考慮したベース収入（ボーナスなし）
+    const husbandBaseNet = husbandRetired ? 0 : Math.round(husbandBaseIncome * husbandLeaveFactor);
+    const wifeBaseNet = wifeRetired ? 0 : Math.round(wifeBaseIncome * wifeLeaveFactor);
+
+    // ボーナス収入（育休中は育休割合を適用）
+    const husbandBonus = husbandRetired ? 0 : Math.round(
+      (husbandBaseIncome / 12) * husbandBonusMonths * husbandLeaveFactor
+    );
+    const wifeBonus = wifeRetired ? 0 : Math.round(
+      (wifeBaseIncome / 12) * wifeBonusMonths * wifeLeaveFactor
+    );
+
+    const husbandIncome = husbandBaseNet + husbandBonus;
+    const wifeIncome = wifeBaseNet + wifeBonus;
 
     const husbandOnLeave = !husbandRetired && husbandLeaveFactor < 1;
     const wifeOnLeave = !wifeRetired && wifeLeaveFactor < 1;
 
     const householdIncome = husbandIncome + wifeIncome;
+    const householdBaseIncome = husbandBaseNet + wifeBaseNet;
+
+    // 子ども費用（教育費 + 追加生活費 + 習い事）
+    const childrenCost = children.reduce((sum, child) => {
+      const educationCost = getAnnualEducationCost(child, calendarYear);
+      const age = calendarYear - child.birthYear;
+      const extraCosts = (age >= 0 && age <= 21)
+        ? ((child.extraMonthlyLivingCost ?? 0) + (child.monthlyExtracurricular ?? 0)) * 12
+        : 0;
+      return sum + educationCost + extraCosts;
+    }, 0);
+
     // 月払い + ボーナス返済を合算して万円換算
     const loanPayment = Math.round(
       (ann.totalPayment + ann.totalBonusPayment) / 10000
     );
     const livingCost = monthlyLivingCost * 12;
-    const remainder = householdIncome - loanPayment - livingCost;
+    const remainder = householdIncome - loanPayment - livingCost - childrenCost;
 
     return {
       year,
@@ -261,8 +288,10 @@ export function calculateCashFlow(
       husbandIncome,
       wifeIncome,
       householdIncome,
+      householdBaseIncome,
       loanPayment,
       livingCost,
+      childrenCost,
       remainder,
       husbandOnLeave,
       wifeOnLeave,
@@ -300,16 +329,24 @@ export function calculateAssets(
     const year = i + 1;
     const calendarYear = currentYear + year;
 
-    const childrenCost = children.reduce(
-      (sum, child) => sum + getAnnualEducationCost(child, calendarYear),
-      0
-    );
+    // cashFlowがある場合は既にchildrenCostがremainderに含まれているので再計算しない
+    const childrenCost = cashFlow
+      ? cashFlow[i].childrenCost
+      : children.reduce((sum, child) => {
+          const educationCost = getAnnualEducationCost(child, calendarYear);
+          const age = calendarYear - child.birthYear;
+          const extraCosts = (age >= 0 && age <= 21)
+            ? ((child.extraMonthlyLivingCost ?? 0) + (child.monthlyExtracurricular ?? 0)) * 12
+            : 0;
+          return sum + educationCost + extraCosts;
+        }, 0);
+
     const lifeEventCost = lifeEvents
       .filter((e) => e.year === year)
       .reduce((sum, e) => sum + e.amount, 0);
 
     const annualSavings = cashFlow
-      ? cashFlow[i].remainder - childrenCost - lifeEventCost
+      ? cashFlow[i].remainder - lifeEventCost  // childrenCostはremainderに含まれている
       : monthlyInvestment * 12 - childrenCost - lifeEventCost;
 
     // 投資資産: 複利成長 + 年間貯蓄

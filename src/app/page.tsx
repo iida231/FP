@@ -51,6 +51,10 @@ const DEFAULT_INCOME_INPUT: IncomeInput = {
   wifeAge: 30,
   husbandRetirementAge: 65,
   wifeRetirementAge: 65,
+  husbandSummerBonusMonths: 0,
+  husbandWinterBonusMonths: 0,
+  wifeSummerBonusMonths: 0,
+  wifeWinterBonusMonths: 0,
 };
 
 const DEFAULT_HOUSEHOLD_INPUT: HouseholdInput = {
@@ -120,8 +124,12 @@ export default function Home() {
             wifeInvestmentAssets: householdInput.wifeInvestmentAssets,
             monthlyInvestment: householdInput.monthlyInvestment,
             averageYield: householdInput.averageYield,
-            children: householdInput.children.map(({ name: n, birthYear, birthMonth, nursing, elementary, middle, high, university, husbandParentalLeaveMonths, wifeParentalLeaveMonths }) => ({
-              name: n, birthYear, birthMonth, nursing, elementary, middle, high, university, husbandParentalLeaveMonths, wifeParentalLeaveMonths,
+            husbandSummerBonusMonths: incomeInput.husbandSummerBonusMonths,
+            husbandWinterBonusMonths: incomeInput.husbandWinterBonusMonths,
+            wifeSummerBonusMonths: incomeInput.wifeSummerBonusMonths,
+            wifeWinterBonusMonths: incomeInput.wifeWinterBonusMonths,
+            children: householdInput.children.map(({ name: n, birthYear, birthMonth, nursing, elementary, middle, high, university, husbandParentalLeaveMonths, wifeParentalLeaveMonths, extraMonthlyLivingCost, monthlyExtracurricular }) => ({
+              name: n, birthYear, birthMonth, nursing, elementary, middle, high, university, husbandParentalLeaveMonths, wifeParentalLeaveMonths, extraMonthlyLivingCost, monthlyExtracurricular,
             })),
             lifeEvents: householdInput.lifeEvents.map(({ eventName, year, amount }) => ({
               eventName, year, amount,
@@ -163,6 +171,10 @@ export default function Home() {
         wifeAge: detail.household.wifeAge ?? 30,
         husbandRetirementAge: detail.household.husbandRetirementAge ?? 65,
         wifeRetirementAge: detail.household.wifeRetirementAge ?? 65,
+        husbandSummerBonusMonths: detail.household.husbandSummerBonusMonths ?? 0,
+        husbandWinterBonusMonths: detail.household.husbandWinterBonusMonths ?? 0,
+        wifeSummerBonusMonths: detail.household.wifeSummerBonusMonths ?? 0,
+        wifeWinterBonusMonths: detail.household.wifeWinterBonusMonths ?? 0,
       });
       setHouseholdInput({
         husbandCashAssets: detail.household.husbandCashAssets ?? 0,
@@ -183,6 +195,8 @@ export default function Home() {
           university: c.university,
           husbandParentalLeaveMonths: c.husbandParentalLeaveMonths ?? 0,
           wifeParentalLeaveMonths: c.wifeParentalLeaveMonths ?? 12,
+          extraMonthlyLivingCost: c.extraMonthlyLivingCost ?? 2,
+          monthlyExtracurricular: c.monthlyExtracurricular ?? 0,
         })),
         lifeEvents: detail.household.lifeEvents.map((e, i) => ({
           id: String(i + 1),

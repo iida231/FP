@@ -105,6 +105,10 @@ export async function PUT(
         wifeInvestmentAssets: number;
         monthlyInvestment: number;
         averageYield: number;
+        husbandSummerBonusMonths: number;
+        husbandWinterBonusMonths: number;
+        wifeSummerBonusMonths: number;
+        wifeWinterBonusMonths: number;
         children: {
           name: string;
           birthYear: number;
@@ -116,6 +120,8 @@ export async function PUT(
           university: string;
           husbandParentalLeaveMonths: number;
           wifeParentalLeaveMonths: number;
+          extraMonthlyLivingCost: number;
+          monthlyExtracurricular: number;
         }[];
         lifeEvents: {
           eventName: string;
@@ -176,6 +182,10 @@ export async function PUT(
                   wifeInvestmentAssets: household.wifeInvestmentAssets ?? 0,
                   monthlyInvestment: household.monthlyInvestment,
                   averageYield: household.averageYield,
+                  husbandSummerBonusMonths: household.husbandSummerBonusMonths ?? 0,
+                  husbandWinterBonusMonths: household.husbandWinterBonusMonths ?? 0,
+                  wifeSummerBonusMonths: household.wifeSummerBonusMonths ?? 0,
+                  wifeWinterBonusMonths: household.wifeWinterBonusMonths ?? 0,
                   children: {
                     create: household.children.map((c) => ({
                       name: c.name,
@@ -188,6 +198,8 @@ export async function PUT(
                       university: c.university as never,
                       husbandParentalLeaveMonths: c.husbandParentalLeaveMonths ?? 0,
                       wifeParentalLeaveMonths: c.wifeParentalLeaveMonths ?? 12,
+                      extraMonthlyLivingCost: c.extraMonthlyLivingCost ?? 2,
+                      monthlyExtracurricular: c.monthlyExtracurricular ?? 0,
                     })),
                   },
                   lifeEvents: {

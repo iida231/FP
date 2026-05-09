@@ -63,12 +63,16 @@ model Household {
   wifeAge                 Int     @default(30)
   husbandRetirementAge    Int     @default(65)
   wifeRetirementAge       Int     @default(65)
-  husbandCashAssets       Float   @default(0)
-  husbandInvestmentAssets Float   @default(0)
-  wifeCashAssets          Float   @default(0)
-  wifeInvestmentAssets    Float   @default(0)
-  monthlyInvestment       Float   @default(0)
-  averageYield            Float   @default(3)
+  husbandCashAssets           Float   @default(0)
+  husbandInvestmentAssets     Float   @default(0)
+  wifeCashAssets              Float   @default(0)
+  wifeInvestmentAssets        Float   @default(0)
+  monthlyInvestment           Float   @default(0)
+  averageYield                Float   @default(3)
+  husbandSummerBonusMonths    Float   @default(0)
+  husbandWinterBonusMonths    Float   @default(0)
+  wifeSummerBonusMonths       Float   @default(0)
+  wifeWinterBonusMonths       Float   @default(0)
 
   simulation Simulation @relation(fields: [simulationId], references: [id], onDelete: Cascade)
   children   Child[]
@@ -88,6 +92,8 @@ model Child {
   university                UnivType   @default(NATIONAL)
   husbandParentalLeaveMonths Int       @default(0)
   wifeParentalLeaveMonths   Int        @default(12)
+  extraMonthlyLivingCost    Float      @default(2)
+  monthlyExtracurricular    Float      @default(0)
 
   household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
 }

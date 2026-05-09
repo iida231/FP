@@ -151,6 +151,38 @@ export default function ChildCard({ child, currentYear, onChange, onRemove }: Pr
           ))}
         </div>
       </div>
+
+      {/* 追加費用 */}
+      <div className="bg-green-50 rounded-lg p-3 space-y-2">
+        <p className="text-xs font-semibold text-green-700">追加費用（0〜21歳まで毎年適用）</p>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <label className="block text-xs text-gray-600">追加生活費（万円/月）</label>
+            <input
+              type="number"
+              step={0.5}
+              min={0}
+              value={child.extraMonthlyLivingCost}
+              onChange={(e) => handleField("extraMonthlyLivingCost", Number(e.target.value))}
+              className="block w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="block text-xs text-gray-600">習い事費（万円/月）</label>
+            <input
+              type="number"
+              step={0.5}
+              min={0}
+              value={child.monthlyExtracurricular}
+              onChange={(e) => handleField("monthlyExtracurricular", Number(e.target.value))}
+              className="block w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+            />
+          </div>
+        </div>
+        <p className="text-xs text-gray-400">
+          追加生活費のデフォルト（平均的な子育て費用の概算）: 2万円/月
+        </p>
+      </div>
     </div>
   );
 }

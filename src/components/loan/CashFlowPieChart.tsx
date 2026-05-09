@@ -11,6 +11,7 @@ type Props = {
 const COLORS = {
   loan: "#ef4444",
   living: "#f97316",
+  children: "#8b5cf6",
   remainder: "#22c55e",
   deficit: "#dc2626",
 };
@@ -26,52 +27,87 @@ function pct(part: number, total: number) {
 
 export default function CashFlowPieChart({ cashFlow }: Props) {
   const [selectedYear, setSelectedYear] = useState(1);
+  const [showBonus, setShowBonus] = useState(true);
 
   if (!cashFlow || cashFlow.length === 0) return null;
 
   const row = cashFlow[selectedYear - 1];
+
+  // ボーナス込み / ボーナスなし で収入を切り替え
+  const annualIncome = showBonus ? row.householdIncome : row.householdBaseIncome;
+
   const monthly = {
-    income: Math.round(row.householdIncome / 12),
+    income: Math.round(annualIncome / 12),
     loan: Math.round(row.loanPayment / 12),
     living: Math.round(row.livingCost / 12),
-    remainder: Math.round(row.remainder / 12),
+    children: Math.round(row.childrenCost / 12),
+    remainder: Math.round((annualIncome - row.loanPayment - row.livingCost - row.childrenCost) / 12),
   };
 
   const isDeficit = monthly.remainder < 0;
 
-  // 円グラフ用データ（手残りがマイナスの場合は収入を超えた支出を表示）
+  const positiveItems = [
+    { name: "ローン返済", value: monthly.loan, color: COLORS.loan },
+    { name: "生活費", value: monthly.living, color: COLORS.living },
+    ...(monthly.children > 0 ? [{ name: "子ども費用", value: monthly.children, color: COLORS.children }] : []),
+  ];
+
   const pieData = isDeficit
     ? [
-        { name: "ローン返済", value: monthly.loan, color: COLORS.loan },
-        { name: "生活費", value: monthly.living, color: COLORS.living },
+        ...positiveItems,
         { name: "収入超過支出", value: -monthly.remainder, color: COLORS.deficit },
       ]
     : [
-        { name: "ローン返済", value: monthly.loan, color: COLORS.loan },
-        { name: "生活費", value: monthly.living, color: COLORS.living },
+        ...positiveItems,
         { name: "手残り", value: monthly.remainder, color: COLORS.remainder },
       ];
 
   const base = isDeficit
-    ? monthly.loan + monthly.living + (-monthly.remainder)
+    ? positiveItems.reduce((s, i) => s + i.value, 0) + (-monthly.remainder)
     : monthly.income;
+
+  const hasBonus = row.householdIncome !== row.householdBaseIncome;
 
   return (
     <div className="space-y-4">
-      {/* 年選択 */}
-      <div className="flex items-center gap-3">
-        <label className="text-sm font-medium text-gray-700 whitespace-nowrap">表示年:</label>
-        <select
-          value={selectedYear}
-          onChange={(e) => setSelectedYear(Number(e.target.value))}
-          className="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          {cashFlow.map((r) => (
-            <option key={r.year} value={r.year}>
-              {r.year}年目（{r.calendarYear}年 / 夫{r.husbandAge}歳・妻{r.wifeAge}歳）
-            </option>
-          ))}
-        </select>
+      {/* コントロール行 */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-medium text-gray-700 whitespace-nowrap">表示年:</label>
+          <select
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(Number(e.target.value))}
+            className="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            {cashFlow.map((r) => (
+              <option key={r.year} value={r.year}>
+                {r.year}年目（{r.calendarYear}年 / 夫{r.husbandAge}歳・妻{r.wifeAge}歳）
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* ボーナス切替ボタン */}
+        {hasBonus && (
+          <div className="flex rounded-lg border border-gray-300 overflow-hidden text-sm">
+            <button
+              onClick={() => setShowBonus(true)}
+              className={`px-3 py-1.5 transition-colors ${
+                showBonus ? "bg-amber-500 text-white font-medium" : "bg-white text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              ボーナス込み
+            </button>
+            <button
+              onClick={() => setShowBonus(false)}
+              className={`px-3 py-1.5 transition-colors ${
+                !showBonus ? "bg-gray-600 text-white font-medium" : "bg-white text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              ボーナスなし
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
@@ -100,6 +136,9 @@ export default function CashFlowPieChart({ cashFlow }: Props) {
         <div className="space-y-3">
           <h4 className="text-sm font-semibold text-gray-700">
             {row.year}年目の月間内訳（{row.calendarYear}年）
+            {!showBonus && hasBonus && (
+              <span className="ml-2 text-xs font-normal text-gray-400">ボーナスなし</span>
+            )}
           </h4>
 
           {isDeficit && (
@@ -111,7 +150,12 @@ export default function CashFlowPieChart({ cashFlow }: Props) {
           <div className="space-y-2 text-sm">
             <div className="flex justify-between items-center py-1.5 border-b border-gray-100">
               <span className="text-gray-600">月間世帯収入</span>
-              <span className="font-semibold">{fmt(monthly.income)}</span>
+              <span className="font-semibold">
+                {fmt(monthly.income)}
+                {!showBonus && hasBonus && (
+                  <span className="text-xs text-gray-400 ml-1">（ボーナスなし）</span>
+                )}
+              </span>
             </div>
             <div className="flex justify-between items-center py-1.5">
               <span className="flex items-center gap-1.5">
@@ -137,6 +181,20 @@ export default function CashFlowPieChart({ cashFlow }: Props) {
                 </span>
               </span>
             </div>
+            {monthly.children > 0 && (
+              <div className="flex justify-between items-center py-1.5">
+                <span className="flex items-center gap-1.5">
+                  <span className="inline-block w-3 h-3 rounded-sm" style={{ background: COLORS.children }} />
+                  子ども費用
+                </span>
+                <span className="font-medium">
+                  {fmt(monthly.children)}
+                  <span className="text-xs text-gray-400 ml-1">
+                    ({pct(monthly.children, monthly.income)})
+                  </span>
+                </span>
+              </div>
+            )}
             <div className={`flex justify-between items-center py-1.5 border-t border-gray-200 font-semibold ${isDeficit ? "text-red-600" : "text-green-700"}`}>
               <span className="flex items-center gap-1.5">
                 <span

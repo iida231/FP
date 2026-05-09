@@ -27,6 +27,10 @@ export type IncomeInput = {
   wifeAge: number;
   husbandRetirementAge: number;
   wifeRetirementAge: number;
+  husbandSummerBonusMonths: number; // 夏ボーナス月数
+  husbandWinterBonusMonths: number; // 冬ボーナス月数
+  wifeSummerBonusMonths: number;
+  wifeWinterBonusMonths: number;
 };
 
 export type ChildInput = {
@@ -41,6 +45,8 @@ export type ChildInput = {
   university: "NATIONAL" | "PRIVATE_HUMANITIES" | "PRIVATE_SCIENCE";
   husbandParentalLeaveMonths: number;
   wifeParentalLeaveMonths: number;
+  extraMonthlyLivingCost: number; // 追加月間生活費（万円）
+  monthlyExtracurricular: number; // 月間習い事費（万円）
 };
 
 export type LifeEventInput = {
@@ -97,8 +103,10 @@ export type AnnualCashFlow = {
   husbandIncome: number;
   wifeIncome: number;
   householdIncome: number;
+  householdBaseIncome: number; // ボーナスを除いた世帯収入
   loanPayment: number;
   livingCost: number;
+  childrenCost: number; // 教育費＋追加生活費＋習い事
   remainder: number;
   husbandOnLeave: boolean;
   wifeOnLeave: boolean;

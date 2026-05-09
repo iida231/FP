@@ -49,6 +49,8 @@ function createDefaultChild(name: string, currentYear: number): ChildInput {
     university: "NATIONAL",
     husbandParentalLeaveMonths: 0,
     wifeParentalLeaveMonths: 12,
+    extraMonthlyLivingCost: 2,
+    monthlyExtracurricular: 0,
   };
 }
 
