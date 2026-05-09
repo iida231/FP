@@ -15,6 +15,8 @@ export type LoanInput = {
   use125PercentRule: boolean;
   ratePeriods: RatePeriodInput[];
   bonusRepaymentPerOccurrence: number; // ボーナス返済額（1回あたり万円）、年2回適用
+  mortgageDeductionRate: number;   // 住宅ローン控除率（%）
+  mortgageDeductionYears: number;  // 控除期間（年）
 };
 
 export type IncomeInput = {
@@ -47,6 +49,11 @@ export type ChildInput = {
   wifeParentalLeaveMonths: number;
   extraMonthlyLivingCost: number; // 追加月間生活費（万円）
   monthlyExtracurricular: number; // 月間習い事費（万円）
+  customNursingCost: number;
+  customElementaryCost: number;
+  customMiddleCost: number;
+  customHighCost: number;
+  customUniversityCost: number;
 };
 
 export type LifeEventInput = {
@@ -107,6 +114,7 @@ export type AnnualCashFlow = {
   loanPayment: number;
   livingCost: number;
   childrenCost: number; // 教育費＋追加生活費＋習い事
+  mortgageDeduction: number; // 住宅ローン控除額（万円/年）
   remainder: number;
   husbandOnLeave: boolean;
   wifeOnLeave: boolean;
@@ -133,6 +141,14 @@ export type SimulationSummary = {
   createdAt: string;
 };
 
+export type HouseholdChildDetail = Omit<ChildInput, "id"> & {
+  customNursingCost?: number;
+  customElementaryCost?: number;
+  customMiddleCost?: number;
+  customHighCost?: number;
+  customUniversityCost?: number;
+};
+
 export type HouseholdDetail = IncomeInput & {
   husbandCashAssets: number;
   husbandInvestmentAssets: number;
@@ -140,7 +156,7 @@ export type HouseholdDetail = IncomeInput & {
   wifeInvestmentAssets: number;
   monthlyInvestment: number;
   averageYield: number;
-  children: Omit<ChildInput, "id">[];
+  children: HouseholdChildDetail[];
   lifeEvents: Omit<LifeEventInput, "id">[];
 };
 
@@ -157,4 +173,6 @@ export type SimulationDetail = {
   ratePeriods: Omit<RatePeriodInput, "id">[];
   household: HouseholdDetail | null;
   bonusRepaymentPerOccurrence: number;
+  mortgageDeductionRate: number;
+  mortgageDeductionYears: number;
 };

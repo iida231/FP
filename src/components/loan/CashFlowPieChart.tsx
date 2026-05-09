@@ -35,13 +35,18 @@ export default function CashFlowPieChart({ cashFlow }: Props) {
 
   // ボーナス込み / ボーナスなし で収入を切り替え
   const annualIncome = showBonus ? row.householdIncome : row.householdBaseIncome;
+  const bonusDiff = row.householdIncome - row.householdBaseIncome;
 
   const monthly = {
     income: Math.round(annualIncome / 12),
     loan: Math.round(row.loanPayment / 12),
     living: Math.round(row.livingCost / 12),
     children: Math.round(row.childrenCost / 12),
-    remainder: Math.round((annualIncome - row.loanPayment - row.livingCost - row.childrenCost) / 12),
+    deduction: Math.round(row.mortgageDeduction / 12),
+    // row.remainder には控除が含まれているので直接利用
+    remainder: showBonus
+      ? Math.round(row.remainder / 12)
+      : Math.round((row.remainder - bonusDiff) / 12),
   };
 
   const isDeficit = monthly.remainder < 0;
@@ -157,6 +162,15 @@ export default function CashFlowPieChart({ cashFlow }: Props) {
                 )}
               </span>
             </div>
+            {monthly.deduction > 0 && (
+              <div className="flex justify-between items-center py-1.5">
+                <span className="flex items-center gap-1.5 text-green-700">
+                  <span className="inline-block w-3 h-3 rounded-sm bg-green-200" />
+                  住宅ローン控除
+                </span>
+                <span className="font-medium text-green-700">+{fmt(monthly.deduction)}</span>
+              </div>
+            )}
             <div className="flex justify-between items-center py-1.5">
               <span className="flex items-center gap-1.5">
                 <span className="inline-block w-3 h-3 rounded-sm" style={{ background: COLORS.loan }} />

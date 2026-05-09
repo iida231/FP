@@ -39,6 +39,8 @@ const DEFAULT_LOAN_INPUT: LoanInput = {
   use125PercentRule: false,
   ratePeriods: [DEFAULT_RATE_PERIOD],
   bonusRepaymentPerOccurrence: 0,
+  mortgageDeductionRate: 0.7,
+  mortgageDeductionYears: 13,
 };
 
 const DEFAULT_INCOME_INPUT: IncomeInput = {
@@ -81,8 +83,8 @@ export default function Home() {
 
   const loanResult = useMemo(() => calculateLoan(loanInput), [loanInput]);
   const cashFlow = useMemo(
-    () => calculateCashFlow(loanResult, incomeInput, householdInput.children),
-    [loanResult, incomeInput, householdInput.children]
+    () => calculateCashFlow(loanResult, incomeInput, householdInput.children, loanInput.mortgageDeductionRate, loanInput.mortgageDeductionYears),
+    [loanResult, incomeInput, householdInput.children, loanInput.mortgageDeductionRate, loanInput.mortgageDeductionYears]
   );
 
   const currentYear = new Date().getFullYear();
@@ -103,6 +105,8 @@ export default function Home() {
           use125PercentRule: loanInput.use125PercentRule,
           totalPayment: loanResult.totalPayment,
           bonusRepaymentPerOccurrence: loanInput.bonusRepaymentPerOccurrence,
+          mortgageDeductionRate: loanInput.mortgageDeductionRate,
+          mortgageDeductionYears: loanInput.mortgageDeductionYears,
           ratePeriods: loanInput.ratePeriods.map(({ startYear, endYear, annualRate }) => ({
             startYear,
             endYear,
@@ -128,8 +132,8 @@ export default function Home() {
             husbandWinterBonusMonths: incomeInput.husbandWinterBonusMonths,
             wifeSummerBonusMonths: incomeInput.wifeSummerBonusMonths,
             wifeWinterBonusMonths: incomeInput.wifeWinterBonusMonths,
-            children: householdInput.children.map(({ name: n, birthYear, birthMonth, nursing, elementary, middle, high, university, husbandParentalLeaveMonths, wifeParentalLeaveMonths, extraMonthlyLivingCost, monthlyExtracurricular }) => ({
-              name: n, birthYear, birthMonth, nursing, elementary, middle, high, university, husbandParentalLeaveMonths, wifeParentalLeaveMonths, extraMonthlyLivingCost, monthlyExtracurricular,
+            children: householdInput.children.map(({ name: n, birthYear, birthMonth, nursing, elementary, middle, high, university, husbandParentalLeaveMonths, wifeParentalLeaveMonths, extraMonthlyLivingCost, monthlyExtracurricular, customNursingCost, customElementaryCost, customMiddleCost, customHighCost, customUniversityCost }) => ({
+              name: n, birthYear, birthMonth, nursing, elementary, middle, high, university, husbandParentalLeaveMonths, wifeParentalLeaveMonths, extraMonthlyLivingCost, monthlyExtracurricular, customNursingCost, customElementaryCost, customMiddleCost, customHighCost, customUniversityCost,
             })),
             lifeEvents: householdInput.lifeEvents.map(({ eventName, year, amount }) => ({
               eventName, year, amount,
@@ -153,6 +157,8 @@ export default function Home() {
       useFiveYearRule: detail.useFiveYearRule,
       use125PercentRule: detail.use125PercentRule,
       bonusRepaymentPerOccurrence: detail.bonusRepaymentPerOccurrence ?? 0,
+      mortgageDeductionRate: detail.mortgageDeductionRate ?? 0.7,
+      mortgageDeductionYears: detail.mortgageDeductionYears ?? 13,
       ratePeriods: detail.ratePeriods.map((rp, i) => ({
         id: String(i + 1),
         startYear: rp.startYear,
@@ -197,6 +203,11 @@ export default function Home() {
           wifeParentalLeaveMonths: c.wifeParentalLeaveMonths ?? 12,
           extraMonthlyLivingCost: c.extraMonthlyLivingCost ?? 2,
           monthlyExtracurricular: c.monthlyExtracurricular ?? 0,
+          customNursingCost:    c.customNursingCost    ?? 19,
+          customElementaryCost: c.customElementaryCost ?? 5,
+          customMiddleCost:     c.customMiddleCost     ?? 49,
+          customHighCost:       c.customHighCost       ?? 51,
+          customUniversityCost: c.customUniversityCost ?? 82,
         })),
         lifeEvents: detail.household.lifeEvents.map((e, i) => ({
           id: String(i + 1),
@@ -280,6 +291,8 @@ export default function Home() {
                 loanResult={loanResult}
                 incomeInput={incomeInput}
                 childList={householdInput.children}
+                mortgageDeductionRate={loanInput.mortgageDeductionRate}
+                mortgageDeductionYears={loanInput.mortgageDeductionYears}
               />
             </div>
           </>
@@ -316,6 +329,8 @@ export default function Home() {
                 loanResult={loanResult}
                 currentYear={currentYear}
                 incomeInput={incomeInput}
+                mortgageDeductionRate={loanInput.mortgageDeductionRate}
+                mortgageDeductionYears={loanInput.mortgageDeductionYears}
               />
             </div>
           </>

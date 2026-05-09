@@ -42,6 +42,8 @@ export async function POST(request: Request) {
       use125PercentRule,
       totalPayment,
       bonusRepaymentPerOccurrence,
+      mortgageDeductionRate,
+      mortgageDeductionYears,
       ratePeriods,
       household,
     } = body as {
@@ -53,6 +55,8 @@ export async function POST(request: Request) {
       use125PercentRule: boolean;
       totalPayment: number;
       bonusRepaymentPerOccurrence: number;
+      mortgageDeductionRate: number;
+      mortgageDeductionYears: number;
       ratePeriods: { startYear: number; endYear: number; annualRate: number }[];
       household?: {
         husbandAnnualIncome: number;
@@ -87,6 +91,11 @@ export async function POST(request: Request) {
           wifeParentalLeaveMonths: number;
           extraMonthlyLivingCost: number;
           monthlyExtracurricular: number;
+          customNursingCost: number;
+          customElementaryCost: number;
+          customMiddleCost: number;
+          customHighCost: number;
+          customUniversityCost: number;
         }[];
         lifeEvents: {
           eventName: string;
@@ -106,6 +115,8 @@ export async function POST(request: Request) {
         use125PercentRule,
         totalPayment,
         bonusRepaymentPerOccurrence: bonusRepaymentPerOccurrence ?? 0,
+        mortgageDeductionRate: mortgageDeductionRate ?? 0,
+        mortgageDeductionYears: mortgageDeductionYears ?? 0,
         ratePeriods: {
           create: ratePeriods.map(({ startYear, endYear, annualRate }) => ({
             startYear,
@@ -149,6 +160,11 @@ export async function POST(request: Request) {
                     wifeParentalLeaveMonths: c.wifeParentalLeaveMonths ?? 12,
                     extraMonthlyLivingCost: c.extraMonthlyLivingCost ?? 2,
                     monthlyExtracurricular: c.monthlyExtracurricular ?? 0,
+                    customNursingCost: c.customNursingCost ?? 19,
+                    customElementaryCost: c.customElementaryCost ?? 5,
+                    customMiddleCost: c.customMiddleCost ?? 49,
+                    customHighCost: c.customHighCost ?? 51,
+                    customUniversityCost: c.customUniversityCost ?? 82,
                   })),
                 },
                 lifeEvents: {

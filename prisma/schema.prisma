@@ -34,6 +34,8 @@ model Simulation {
   use125PercentRule           Boolean        @default(false)
   totalPayment                Float          @default(0)
   bonusRepaymentPerOccurrence Float          @default(0)
+  mortgageDeductionRate       Float          @default(0)
+  mortgageDeductionYears      Int            @default(0)
   createdAt                   DateTime       @default(now())
   updatedAt                   DateTime       @updatedAt
 
@@ -94,6 +96,11 @@ model Child {
   wifeParentalLeaveMonths   Int        @default(12)
   extraMonthlyLivingCost    Float      @default(2)
   monthlyExtracurricular    Float      @default(0)
+  customNursingCost         Float      @default(19)
+  customElementaryCost      Float      @default(5)
+  customMiddleCost          Float      @default(49)
+  customHighCost            Float      @default(51)
+  customUniversityCost      Float      @default(82)
 
   household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
 }

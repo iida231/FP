@@ -7,13 +7,13 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
   Legend,
   ResponsiveContainer,
+  Tooltip,
 } from "recharts";
 import type { ChildInput } from "@/types";
 import ChildCard from "./ChildCard";
-import { getAnnualEducationCost } from "@/lib/educationCosts";
+import { getAnnualEducationCostCustom, getSchoolStage, EDUCATION_COSTS } from "@/lib/educationCosts";
 
 type Props = {
   childList: ChildInput[];
@@ -22,7 +22,6 @@ type Props = {
   onChange: (childList: ChildInput[]) => void;
 };
 
-// 子どもごとに固定色を割り当てる
 const CHILD_COLORS = [
   "#3b82f6", // blue-500
   "#10b981", // emerald-500
@@ -31,6 +30,19 @@ const CHILD_COLORS = [
   "#8b5cf6", // violet-500
   "#06b6d4", // cyan-500
 ];
+
+const EXTRA_COLORS = [
+  "#93c5fd", // blue-300
+  "#6ee7b7", // emerald-300
+  "#fcd34d", // amber-300
+  "#fca5a5", // red-300
+  "#c4b5fd", // violet-300
+  "#67e8f9", // cyan-300
+];
+
+const STAGE_LABELS: Record<string, string> = {
+  nursing: "保育園", elementary: "小学校", middle: "中学校", high: "高校", university: "大学",
+};
 
 function generateId(): string {
   return Math.random().toString(36).slice(2, 10);
@@ -51,7 +63,48 @@ function createDefaultChild(name: string, currentYear: number): ChildInput {
     wifeParentalLeaveMonths: 12,
     extraMonthlyLivingCost: 2,
     monthlyExtracurricular: 0,
+    customNursingCost:    EDUCATION_COSTS.nursing.PUBLIC,
+    customElementaryCost: EDUCATION_COSTS.elementary.PUBLIC,
+    customMiddleCost:     EDUCATION_COSTS.middle.PUBLIC,
+    customHighCost:       EDUCATION_COSTS.high.PUBLIC,
+    customUniversityCost: EDUCATION_COSTS.university.NATIONAL,
   };
+}
+
+type ChartRow = Record<string, number | string>;
+
+function CustomTooltip({ active, payload, label, childList }: {
+  active?: boolean;
+  payload?: { dataKey: string; payload: ChartRow }[];
+  label?: string | number;
+  childList: ChildInput[];
+}) {
+  if (!active || !payload || payload.length === 0) return null;
+  const rowData = payload[0]?.payload as ChartRow;
+  const year = Number(label);
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-lg p-3 text-xs shadow-lg min-w-[180px]">
+      <p className="font-semibold mb-2">{year}年</p>
+      {(childList as ChildInput[]).map((child: ChildInput) => {
+        const childName = child.name || child.id;
+        const edu = (rowData[`${childName}_edu`] as number) ?? 0;
+        const extra = (rowData[`${childName}_extra`] as number) ?? 0;
+        if (edu + extra === 0) return null;
+        const age = year - child.birthYear;
+        const stage = getSchoolStage(age);
+        return (
+          <div key={child.id} className="mb-1.5">
+            <span className="font-medium">{childName}</span>
+            {stage && <span className="text-gray-400 ml-1">（{STAGE_LABELS[stage]}）</span>}
+            {edu > 0 && <div className="pl-2 text-gray-600">学費: {edu}万円</div>}
+            {extra > 0 && <div className="pl-2 text-gray-500">追加費用: {extra}万円</div>}
+            <div className="pl-2 font-semibold">計: {edu + extra}万円</div>
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 export default function ChildrenSimulator({
@@ -60,33 +113,34 @@ export default function ChildrenSimulator({
   termYears,
   onChange,
 }: Props) {
-  // X軸の年リスト
   const years = useMemo(
     () => Array.from({ length: termYears + 1 }, (_, i) => currentYear + i),
     [currentYear, termYears]
   );
 
-  // グラフ用データ: [{ year, "子ども1": 80, "子ども2": 115, ... }, ...]
   const chartData = useMemo(() => {
     return years.map((year) => {
-      const row: Record<string, number | string> = { year };
+      const row: ChartRow = { year };
       childList.forEach((child) => {
-        row[child.name || child.id] = getAnnualEducationCost(child, year);
+        const childName = child.name || child.id;
+        const edu = getAnnualEducationCostCustom(child, year);
+        const age = year - child.birthYear;
+        const extra = (age >= 0 && age <= 21)
+          ? ((child.extraMonthlyLivingCost ?? 0) + (child.monthlyExtracurricular ?? 0)) * 12
+          : 0;
+        row[`${childName}_edu`] = edu;
+        row[`${childName}_extra`] = extra;
       });
       return row;
     });
   }, [years, childList]);
 
-  // 合計教育費（全期間）
   const totalCost = useMemo(() => {
     return chartData.reduce((sum, row) => {
-      return (
-        sum +
-        childList.reduce((s, child) => {
-          const cost = row[child.name || child.id];
-          return s + (typeof cost === "number" ? cost : 0);
-        }, 0)
-      );
+      return sum + childList.reduce((s, child) => {
+        const childName = child.name || child.id;
+        return s + ((row[`${childName}_edu`] as number) ?? 0) + ((row[`${childName}_extra`] as number) ?? 0);
+      }, 0);
     }, 0);
   }, [chartData, childList]);
 
@@ -96,8 +150,7 @@ export default function ChildrenSimulator({
   }
 
   function handleChange(index: number, updated: ChildInput) {
-    const next = childList.map((c, i) => (i === index ? updated : c));
-    onChange(next);
+    onChange(childList.map((c, i) => (i === index ? updated : c)));
   }
 
   function handleRemove(index: number) {
@@ -140,9 +193,9 @@ export default function ChildrenSimulator({
       {childList.length > 0 && (
         <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-gray-700">年間教育費の推移</h3>
+            <h3 className="text-sm font-semibold text-gray-700">年間教育費・追加費用の推移</h3>
             <span className="text-sm text-gray-500">
-              シミュレーション期間合計：
+              期間合計：
               <span className="font-bold text-blue-600 ml-1">{totalCost.toLocaleString()} 万円</span>
             </span>
           </div>
@@ -163,20 +216,30 @@ export default function ChildrenSimulator({
                 unit="万"
                 width={48}
               />
-              <Tooltip
-                formatter={(value: number, name: string) => [`${value} 万円`, name]}
-                labelFormatter={(label) => `${label}年`}
-              />
+              <Tooltip content={<CustomTooltip childList={childList} />} />
               <Legend />
-              {childList.map((child, index) => (
-                <Bar
-                  key={child.id}
-                  dataKey={child.name || child.id}
-                  stackId="education"
-                  fill={CHILD_COLORS[index % CHILD_COLORS.length]}
-                  radius={index === childList.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
-                />
-              ))}
+              {childList.map((child, index) => {
+                const childName = child.name || child.id;
+                const eduColor = CHILD_COLORS[index % CHILD_COLORS.length];
+                const extraColor = EXTRA_COLORS[index % EXTRA_COLORS.length];
+                return [
+                  <Bar
+                    key={`${child.id}_edu`}
+                    dataKey={`${childName}_edu`}
+                    name={`${childName} 学費`}
+                    stackId="education"
+                    fill={eduColor}
+                  />,
+                  <Bar
+                    key={`${child.id}_extra`}
+                    dataKey={`${childName}_extra`}
+                    name={`${childName} 追加費用`}
+                    stackId="education"
+                    fill={extraColor}
+                    radius={index === childList.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
+                  />,
+                ];
+              })}
             </BarChart>
           </ResponsiveContainer>
         </div>

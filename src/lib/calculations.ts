@@ -10,7 +10,7 @@ import type {
   AnnualAssetRow,
   RatePeriodInput,
 } from "@/types";
-import { getAnnualEducationCost } from "./educationCosts";
+import { getAnnualEducationCost, getAnnualEducationCostCustom } from "./educationCosts";
 
 // 各月に適用する年利(%)を返すヘルパー
 function getRateForMonth(month: number, ratePeriods: RatePeriodInput[]): number {
@@ -184,7 +184,9 @@ export function calculateLoan(input: LoanInput): LoanResult {
 export function calculateCashFlow(
   loanResult: LoanResult,
   incomeInput: IncomeInput,
-  children: ChildInput[] = []
+  children: ChildInput[] = [],
+  mortgageDeductionRate = 0,
+  mortgageDeductionYears = 0,
 ): AnnualCashFlow[] {
   const currentYear = new Date().getFullYear();
   const {
@@ -205,6 +207,10 @@ export function calculateCashFlow(
 
   const husbandBonusMonths = husbandSummerBonusMonths + husbandWinterBonusMonths;
   const wifeBonusMonths = wifeSummerBonusMonths + wifeWinterBonusMonths;
+
+  // 月収 = 総年収 ÷ (12 + ボーナス月数)
+  const husbandMonthlyBase = husbandAnnualIncome / (12 + husbandBonusMonths);
+  const wifeMonthlyBase = wifeAnnualIncome / (12 + wifeBonusMonths);
 
   const husbandRetireCalYear = currentYear + (husbandRetirementAge - husbandAge);
   const wifeRetireCalYear = currentYear + (wifeRetirementAge - wifeAge);
@@ -235,24 +241,19 @@ export function calculateCashFlow(
     const husbandRetired = calendarYear >= husbandRetireCalYear;
     const wifeRetired = calendarYear >= wifeRetireCalYear;
 
-    const husbandBaseIncome = Math.round(
-      husbandAnnualIncome * Math.pow(1 + husbandRaiseRate / 100, year - 1)
-    );
-    const wifeBaseIncome = Math.round(
-      wifeAnnualIncome * Math.pow(1 + wifeRaiseRate / 100, year - 1)
-    );
+    const hGrowth = Math.pow(1 + husbandRaiseRate / 100, year - 1);
+    const wGrowth = Math.pow(1 + wifeRaiseRate / 100, year - 1);
 
-    // 育休・退職を考慮したベース収入（ボーナスなし）
-    const husbandBaseNet = husbandRetired ? 0 : Math.round(husbandBaseIncome * husbandLeaveFactor);
-    const wifeBaseNet = wifeRetired ? 0 : Math.round(wifeBaseIncome * wifeLeaveFactor);
+    const hMonthly = husbandMonthlyBase * hGrowth;
+    const wMonthly = wifeMonthlyBase * wGrowth;
 
-    // ボーナス収入（育休中は育休割合を適用）
-    const husbandBonus = husbandRetired ? 0 : Math.round(
-      (husbandBaseIncome / 12) * husbandBonusMonths * husbandLeaveFactor
-    );
-    const wifeBonus = wifeRetired ? 0 : Math.round(
-      (wifeBaseIncome / 12) * wifeBonusMonths * wifeLeaveFactor
-    );
+    // 12ヶ月分（育休・退職考慮）
+    const husbandBaseNet = husbandRetired ? 0 : Math.round(hMonthly * 12 * husbandLeaveFactor);
+    const wifeBaseNet = wifeRetired ? 0 : Math.round(wMonthly * 12 * wifeLeaveFactor);
+
+    // ボーナス分（育休・退職考慮）
+    const husbandBonus = husbandRetired ? 0 : Math.round(hMonthly * husbandBonusMonths * husbandLeaveFactor);
+    const wifeBonus = wifeRetired ? 0 : Math.round(wMonthly * wifeBonusMonths * wifeLeaveFactor);
 
     const husbandIncome = husbandBaseNet + husbandBonus;
     const wifeIncome = wifeBaseNet + wifeBonus;
@@ -263,9 +264,9 @@ export function calculateCashFlow(
     const householdIncome = husbandIncome + wifeIncome;
     const householdBaseIncome = husbandBaseNet + wifeBaseNet;
 
-    // 子ども費用（教育費 + 追加生活費 + 習い事）
+    // 子ども費用（カスタム教育費 + 追加生活費 + 習い事）
     const childrenCost = children.reduce((sum, child) => {
-      const educationCost = getAnnualEducationCost(child, calendarYear);
+      const educationCost = getAnnualEducationCostCustom(child, calendarYear);
       const age = calendarYear - child.birthYear;
       const extraCosts = (age >= 0 && age <= 21)
         ? ((child.extraMonthlyLivingCost ?? 0) + (child.monthlyExtracurricular ?? 0)) * 12
@@ -278,7 +279,13 @@ export function calculateCashFlow(
       (ann.totalPayment + ann.totalBonusPayment) / 10000
     );
     const livingCost = monthlyLivingCost * 12;
-    const remainder = householdIncome - loanPayment - livingCost - childrenCost;
+
+    // 住宅ローン控除（年末ローン残高 × 控除率）
+    const mortgageDeduction = (mortgageDeductionRate > 0 && year <= mortgageDeductionYears)
+      ? Math.round(ann.balance / 10000 * mortgageDeductionRate / 100)
+      : 0;
+
+    const remainder = householdIncome + mortgageDeduction - loanPayment - livingCost - childrenCost;
 
     return {
       year,
@@ -292,6 +299,7 @@ export function calculateCashFlow(
       loanPayment,
       livingCost,
       childrenCost,
+      mortgageDeduction,
       remainder,
       husbandOnLeave,
       wifeOnLeave,
@@ -302,7 +310,9 @@ export function calculateCashFlow(
 export function calculateAssets(
   householdInput: HouseholdInput,
   loanResult: LoanResult,
-  incomeInput?: IncomeInput
+  incomeInput?: IncomeInput,
+  mortgageDeductionRate = 0,
+  mortgageDeductionYears = 0,
 ): AnnualAssetRow[] {
   const {
     husbandCashAssets,
@@ -322,7 +332,7 @@ export function calculateAssets(
   const rows: AnnualAssetRow[] = [];
 
   const cashFlow = incomeInput
-    ? calculateCashFlow(loanResult, incomeInput, children)
+    ? calculateCashFlow(loanResult, incomeInput, children, mortgageDeductionRate, mortgageDeductionYears)
     : null;
 
   for (let i = 0; i < loanResult.annual.length; i++) {
@@ -333,7 +343,7 @@ export function calculateAssets(
     const childrenCost = cashFlow
       ? cashFlow[i].childrenCost
       : children.reduce((sum, child) => {
-          const educationCost = getAnnualEducationCost(child, calendarYear);
+          const educationCost = getAnnualEducationCostCustom(child, calendarYear);
           const age = calendarYear - child.birthYear;
           const extraCosts = (age >= 0 && age <= 21)
             ? ((child.extraMonthlyLivingCost ?? 0) + (child.monthlyExtracurricular ?? 0)) * 12

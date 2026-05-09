@@ -7,10 +7,39 @@ type Props = {
   onChange: (value: IncomeInput) => void;
 };
 
+function getTakeHomeRate(annualIncome: number): number {
+  if (annualIncome <= 200) return 0.80;
+  if (annualIncome <= 400) return 0.78;
+  if (annualIncome <= 600) return 0.75;
+  if (annualIncome <= 800) return 0.72;
+  if (annualIncome <= 1000) return 0.68;
+  return 0.65;
+}
+
+function IncomeInfo({ annualIncome, bonusMonths }: { annualIncome: number; bonusMonths: number }) {
+  if (annualIncome <= 0) return null;
+  const monthlyBase = annualIncome / (12 + bonusMonths);
+  const takeHomeRate = getTakeHomeRate(annualIncome);
+  const takeHome = Math.round(monthlyBase * takeHomeRate * 10) / 10;
+  return (
+    <div className="bg-blue-50 rounded-lg px-3 py-2 text-xs text-blue-800 space-y-0.5">
+      <div>推定月収: <span className="font-semibold">{Math.round(monthlyBase * 10) / 10} 万円</span>
+        {bonusMonths > 0 && <span className="text-blue-500 ml-1">（年収 ÷ {12 + bonusMonths}ヶ月）</span>}
+      </div>
+      <div>推定手取月収: <span className="font-semibold">{takeHome} 万円</span>
+        <span className="text-blue-400 ml-1">（約{Math.round(takeHomeRate * 100)}%）</span>
+      </div>
+    </div>
+  );
+}
+
 export default function IncomeForm({ value, onChange }: Props) {
   function handleField<K extends keyof IncomeInput>(field: K, fieldValue: IncomeInput[K]) {
     onChange({ ...value, [field]: fieldValue });
   }
+
+  const husbandBonusMonths = value.husbandSummerBonusMonths + value.husbandWinterBonusMonths;
+  const wifeBonusMonths = value.wifeSummerBonusMonths + value.wifeWinterBonusMonths;
 
   return (
     <div className="bg-white rounded-lg shadow-sm p-6 space-y-5">
@@ -46,7 +75,7 @@ export default function IncomeForm({ value, onChange }: Props) {
             />
           </div>
           <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700">月収ベース年収（万円）</label>
+            <label className="block text-sm font-medium text-gray-700">総年収（万円）</label>
             <input
               type="number"
               min={0}
@@ -95,6 +124,7 @@ export default function IncomeForm({ value, onChange }: Props) {
               </div>
             </div>
           </div>
+          <IncomeInfo annualIncome={value.husbandAnnualIncome} bonusMonths={husbandBonusMonths} />
         </div>
 
         {/* 妻 */}
@@ -125,7 +155,7 @@ export default function IncomeForm({ value, onChange }: Props) {
             />
           </div>
           <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700">月収ベース年収（万円）</label>
+            <label className="block text-sm font-medium text-gray-700">総年収（万円）</label>
             <input
               type="number"
               min={0}
@@ -174,6 +204,7 @@ export default function IncomeForm({ value, onChange }: Props) {
               </div>
             </div>
           </div>
+          <IncomeInfo annualIncome={value.wifeAnnualIncome} bonusMonths={wifeBonusMonths} />
         </div>
       </div>
 
@@ -191,7 +222,7 @@ export default function IncomeForm({ value, onChange }: Props) {
 
       {/* 注記 */}
       <p className="text-xs text-gray-400">
-        月収ベース年収はボーナスを除いた12ヶ月分の給与です。ボーナスは月収×月数で別途加算されます。育休は子ども設定（家計診断タブ）で入力。最初6ヶ月67%・以降50%（日本の給付金制度に準拠）
+        総年収はボーナスを含む1年間の収入合計です。推定月収 = 総年収 ÷ (12 + ボーナス月数)。育休は子ども設定（家計診断タブ）で入力。最初6ヶ月67%・以降50%（日本の給付金制度に準拠）
       </p>
     </div>
   );

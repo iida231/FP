@@ -20,9 +20,11 @@ type Props = {
   loanResult: LoanResult;
   incomeInput: IncomeInput;
   childList: ChildInput[];
+  mortgageDeductionRate?: number;
+  mortgageDeductionYears?: number;
 };
 
-export default function CashFlowChart({ loanResult, incomeInput, childList }: Props) {
+export default function CashFlowChart({ loanResult, incomeInput, childList, mortgageDeductionRate = 0, mortgageDeductionYears = 0 }: Props) {
   const [showTable, setShowTable] = useState(true);
 
   if (!loanResult.annual || loanResult.annual.length === 0) {
@@ -33,7 +35,7 @@ export default function CashFlowChart({ loanResult, incomeInput, childList }: Pr
     );
   }
 
-  const data = calculateCashFlow(loanResult, incomeInput, childList);
+  const data = calculateCashFlow(loanResult, incomeInput, childList, mortgageDeductionRate, mortgageDeductionYears);
   const hasNegativeRemainder = data.some((d) => d.remainder < 0);
 
   return (
@@ -134,6 +136,7 @@ export default function CashFlowChart({ loanResult, incomeInput, childList }: Pr
                 <th className="border border-gray-200 px-3 py-2 text-right whitespace-nowrap">妻の年収（万円）</th>
                 <th className="border border-gray-200 px-3 py-2 text-right whitespace-nowrap">世帯収入（万円）</th>
                 <th className="border border-gray-200 px-3 py-2 text-right whitespace-nowrap">子ども費用（万円）</th>
+                <th className="border border-gray-200 px-3 py-2 text-right whitespace-nowrap">ローン控除（万円）</th>
                 <th className="border border-gray-200 px-3 py-2 text-right whitespace-nowrap">手残り（万円）</th>
               </tr>
             </thead>
@@ -174,6 +177,9 @@ export default function CashFlowChart({ loanResult, incomeInput, childList }: Pr
                   </td>
                   <td className="border border-gray-200 px-3 py-1.5 text-right text-violet-700">
                     {row.childrenCost > 0 ? row.childrenCost.toLocaleString() : "—"}
+                  </td>
+                  <td className="border border-gray-200 px-3 py-1.5 text-right text-green-700">
+                    {row.mortgageDeduction > 0 ? `+${row.mortgageDeduction.toLocaleString()}` : "—"}
                   </td>
                   <td className={`border border-gray-200 px-3 py-1.5 text-right font-medium ${
                     row.remainder < 0 ? "text-red-600" : "text-green-700"

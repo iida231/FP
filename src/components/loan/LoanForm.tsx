@@ -113,6 +113,37 @@ export default function LoanForm({ value, onChange }: Props) {
         <p className="text-xs text-gray-400">年2回（6月・12月）元本を追加返済します。0の場合は適用なし。</p>
       </div>
 
+      {/* 住宅ローン控除 */}
+      <div className="space-y-2">
+        <span className="block text-sm font-medium text-gray-700">住宅ローン控除</span>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <label className="block text-xs text-gray-600">控除率（%）</label>
+            <input
+              type="number"
+              step={0.1}
+              min={0}
+              max={1}
+              value={value.mortgageDeductionRate}
+              onChange={(e) => handleField("mortgageDeductionRate", Number(e.target.value))}
+              className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="block text-xs text-gray-600">控除期間（年）</label>
+            <input
+              type="number"
+              min={0}
+              max={15}
+              value={value.mortgageDeductionYears}
+              onChange={(e) => handleField("mortgageDeductionYears", Number(e.target.value))}
+              className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+        <p className="text-xs text-gray-400">年末ローン残高 × 控除率を毎年税還付として計上します。0.7%・13年が一般的です（0に設定すると適用なし）。</p>
+      </div>
+
       {/* 金利期間テーブル */}
       <div className="space-y-1">
         <span className="block text-sm font-medium text-gray-700">金利設定</span>

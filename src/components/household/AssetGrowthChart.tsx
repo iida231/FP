@@ -58,12 +58,16 @@ type Props = {
   loanResult: LoanResult;
   currentYear: number;
   incomeInput: IncomeInput;
+  mortgageDeductionRate?: number;
+  mortgageDeductionYears?: number;
 };
 
 export default function AssetGrowthChart({
   householdInput,
   loanResult,
   incomeInput,
+  mortgageDeductionRate = 0,
+  mortgageDeductionYears = 0,
 }: Props) {
   // データが空の場合はフォールバック表示
   if (!loanResult.annual || loanResult.annual.length === 0) {
@@ -74,7 +78,7 @@ export default function AssetGrowthChart({
     );
   }
 
-  const data = calculateAssets(householdInput, loanResult, incomeInput);
+  const data = calculateAssets(householdInput, loanResult, incomeInput, mortgageDeductionRate, mortgageDeductionYears);
   const loanTermYears = loanResult.annual.length;
 
   // ライフイベントのマーカー
@@ -145,6 +149,15 @@ export default function AssetGrowthChart({
           dataKey="investmentAssets"
           name="投資資産（万円）"
           stroke="#3b82f6"
+          dot={false}
+          strokeWidth={1.5}
+          strokeDasharray="4 2"
+        />
+        <Line
+          type="monotone"
+          dataKey="cashAssets"
+          name="現金資産（万円）"
+          stroke="#9ca3af"
           dot={false}
           strokeWidth={1.5}
           strokeDasharray="4 2"

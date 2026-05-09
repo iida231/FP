@@ -1,3 +1,5 @@
+import type { ChildInput } from "@/types";
+
 // 文部科学省データに基づく年間教育費（万円）
 export const EDUCATION_COSTS = {
   nursing:    { PUBLIC: 19,  PRIVATE: 40  },
@@ -17,7 +19,16 @@ export function getSchoolStage(age: number): keyof typeof EDUCATION_COSTS | null
   return null;
 }
 
-// 特定の年における子ども1人の教育費を計算する（万円）
+// 選択種別のデフォルト費用を返す
+export function getDefaultEducationCost(
+  child: Pick<ChildInput, 'nursing' | 'elementary' | 'middle' | 'high' | 'university'>,
+  stage: keyof typeof EDUCATION_COSTS
+): number {
+  if (stage === 'university') return EDUCATION_COSTS.university[child.university];
+  return (EDUCATION_COSTS[stage] as Record<string, number>)[child[stage as keyof typeof child] as string] ?? 0;
+}
+
+// 特定の年における子ども1人の教育費を計算する（万円）— デフォルト費用を使用
 export function getAnnualEducationCost(
   child: { birthYear: number; nursing: string; elementary: string; middle: string; high: string; university: string },
   calendarYear: number
@@ -32,4 +43,23 @@ export function getAnnualEducationCost(
     return costs[child.university] ?? 0;
   }
   return costs[child[stage as keyof typeof child]] ?? 0;
+}
+
+// カスタム費用を使用した教育費計算（万円）
+const stageToCustomKey: Record<keyof typeof EDUCATION_COSTS, keyof ChildInput> = {
+  nursing:    'customNursingCost',
+  elementary: 'customElementaryCost',
+  middle:     'customMiddleCost',
+  high:       'customHighCost',
+  university: 'customUniversityCost',
+};
+
+export function getAnnualEducationCostCustom(
+  child: ChildInput,
+  calendarYear: number
+): number {
+  const age = calendarYear - child.birthYear;
+  const stage = getSchoolStage(age);
+  if (!stage) return 0;
+  return child[stageToCustomKey[stage]] as number;
 }

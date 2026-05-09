@@ -18,6 +18,8 @@ function buildSaveBody(detail: SimulationDetail, name: string) {
     use125PercentRule: detail.use125PercentRule,
     totalPayment: detail.totalPayment,
     bonusRepaymentPerOccurrence: detail.bonusRepaymentPerOccurrence ?? 0,
+    mortgageDeductionRate: detail.mortgageDeductionRate ?? 0,
+    mortgageDeductionYears: detail.mortgageDeductionYears ?? 0,
     ratePeriods: detail.ratePeriods.map(({ startYear, endYear, annualRate }) => ({
       startYear, endYear, annualRate,
     })),
@@ -54,6 +56,11 @@ function buildSaveBody(detail: SimulationDetail, name: string) {
         wifeParentalLeaveMonths: c.wifeParentalLeaveMonths ?? 12,
         extraMonthlyLivingCost: c.extraMonthlyLivingCost ?? 2,
         monthlyExtracurricular: c.monthlyExtracurricular ?? 0,
+        customNursingCost:    c.customNursingCost    ?? 19,
+        customElementaryCost: c.customElementaryCost ?? 5,
+        customMiddleCost:     c.customMiddleCost     ?? 49,
+        customHighCost:       c.customHighCost       ?? 51,
+        customUniversityCost: c.customUniversityCost ?? 82,
       })),
       lifeEvents: detail.household.lifeEvents.map((e) => ({
         eventName: e.eventName,
