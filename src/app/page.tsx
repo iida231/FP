@@ -45,6 +45,10 @@ const DEFAULT_INCOME_INPUT: IncomeInput = {
   husbandRaiseRate: 2,
   wifeRaiseRate: 2,
   monthlyLivingCost: 20,
+  husbandAge: 30,
+  wifeAge: 30,
+  husbandRetirementAge: 65,
+  wifeRetirementAge: 65,
 };
 
 const DEFAULT_HOUSEHOLD_INPUT: HouseholdInput = {
@@ -100,12 +104,16 @@ export default function Home() {
             husbandRaiseRate: incomeInput.husbandRaiseRate,
             wifeRaiseRate: incomeInput.wifeRaiseRate,
             monthlyLivingCost: incomeInput.monthlyLivingCost,
+            husbandAge: incomeInput.husbandAge,
+            wifeAge: incomeInput.wifeAge,
+            husbandRetirementAge: incomeInput.husbandRetirementAge,
+            wifeRetirementAge: incomeInput.wifeRetirementAge,
             husbandAssets: householdInput.husbandAssets,
             wifeAssets: householdInput.wifeAssets,
             monthlyInvestment: householdInput.monthlyInvestment,
             averageYield: householdInput.averageYield,
-            children: householdInput.children.map(({ name: n, birthYear, nursing, elementary, middle, high, university }) => ({
-              name: n, birthYear, nursing, elementary, middle, high, university,
+            children: householdInput.children.map(({ name: n, birthYear, birthMonth, nursing, elementary, middle, high, university, husbandParentalLeaveMonths, wifeParentalLeaveMonths }) => ({
+              name: n, birthYear, birthMonth, nursing, elementary, middle, high, university, husbandParentalLeaveMonths, wifeParentalLeaveMonths,
             })),
             lifeEvents: householdInput.lifeEvents.map(({ eventName, year, amount }) => ({
               eventName, year, amount,
@@ -142,6 +150,10 @@ export default function Home() {
         husbandRaiseRate: detail.household.husbandRaiseRate,
         wifeRaiseRate: detail.household.wifeRaiseRate,
         monthlyLivingCost: detail.household.monthlyLivingCost,
+        husbandAge: detail.household.husbandAge ?? 30,
+        wifeAge: detail.household.wifeAge ?? 30,
+        husbandRetirementAge: detail.household.husbandRetirementAge ?? 65,
+        wifeRetirementAge: detail.household.wifeRetirementAge ?? 65,
       });
       setHouseholdInput({
         husbandAssets: detail.household.husbandAssets,
@@ -152,11 +164,14 @@ export default function Home() {
           id: String(i + 1),
           name: c.name,
           birthYear: c.birthYear,
+          birthMonth: c.birthMonth ?? 4,
           nursing: c.nursing,
           elementary: c.elementary,
           middle: c.middle,
           high: c.high,
           university: c.university,
+          husbandParentalLeaveMonths: c.husbandParentalLeaveMonths ?? 0,
+          wifeParentalLeaveMonths: c.wifeParentalLeaveMonths ?? 12,
         })),
         lifeEvents: detail.household.lifeEvents.map((e, i) => ({
           id: String(i + 1),
@@ -231,6 +246,7 @@ export default function Home() {
               <CashFlowChart
                 loanResult={loanResult}
                 incomeInput={incomeInput}
+                childList={householdInput.children}
               />
             </div>
           </>
@@ -266,6 +282,7 @@ export default function Home() {
                 householdInput={householdInput}
                 loanResult={loanResult}
                 currentYear={currentYear}
+                incomeInput={incomeInput}
               />
             </div>
           </>

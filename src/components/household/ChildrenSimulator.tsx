@@ -41,11 +41,14 @@ function createDefaultChild(name: string, currentYear: number): ChildInput {
     id: generateId(),
     name,
     birthYear: currentYear - 3,
+    birthMonth: 4,
     nursing:    "PUBLIC",
     elementary: "PUBLIC",
     middle:     "PUBLIC",
     high:       "PUBLIC",
     university: "NATIONAL",
+    husbandParentalLeaveMonths: 0,
+    wifeParentalLeaveMonths: 12,
   };
 }
 

@@ -58,6 +58,10 @@ export async function POST(request: Request) {
         husbandRaiseRate: number;
         wifeRaiseRate: number;
         monthlyLivingCost: number;
+        husbandAge: number;
+        wifeAge: number;
+        husbandRetirementAge: number;
+        wifeRetirementAge: number;
         husbandAssets: number;
         wifeAssets: number;
         monthlyInvestment: number;
@@ -65,11 +69,14 @@ export async function POST(request: Request) {
         children: {
           name: string;
           birthYear: number;
+          birthMonth: number;
           nursing: string;
           elementary: string;
           middle: string;
           high: string;
           university: string;
+          husbandParentalLeaveMonths: number;
+          wifeParentalLeaveMonths: number;
         }[];
         lifeEvents: {
           eventName: string;
@@ -103,6 +110,10 @@ export async function POST(request: Request) {
                 husbandRaiseRate: household.husbandRaiseRate,
                 wifeRaiseRate: household.wifeRaiseRate,
                 monthlyLivingCost: household.monthlyLivingCost,
+                husbandAge: household.husbandAge ?? 30,
+                wifeAge: household.wifeAge ?? 30,
+                husbandRetirementAge: household.husbandRetirementAge ?? 65,
+                wifeRetirementAge: household.wifeRetirementAge ?? 65,
                 husbandAssets: household.husbandAssets,
                 wifeAssets: household.wifeAssets,
                 monthlyInvestment: household.monthlyInvestment,
@@ -111,11 +122,14 @@ export async function POST(request: Request) {
                   create: household.children.map((c) => ({
                     name: c.name,
                     birthYear: c.birthYear,
+                    birthMonth: c.birthMonth ?? 4,
                     nursing: c.nursing as never,
                     elementary: c.elementary as never,
                     middle: c.middle as never,
                     high: c.high as never,
                     university: c.university as never,
+                    husbandParentalLeaveMonths: c.husbandParentalLeaveMonths ?? 0,
+                    wifeParentalLeaveMonths: c.wifeParentalLeaveMonths ?? 12,
                   })),
                 },
                 lifeEvents: {

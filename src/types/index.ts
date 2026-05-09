@@ -22,17 +22,24 @@ export type IncomeInput = {
   husbandRaiseRate: number;
   wifeRaiseRate: number;
   monthlyLivingCost: number;
+  husbandAge: number;
+  wifeAge: number;
+  husbandRetirementAge: number;
+  wifeRetirementAge: number;
 };
 
 export type ChildInput = {
   id: string;
   name: string;
   birthYear: number;
+  birthMonth: number; // 1-12
   nursing: "PUBLIC" | "PRIVATE";
   elementary: "PUBLIC" | "PRIVATE";
   middle: "PUBLIC" | "PRIVATE";
   high: "PUBLIC" | "PRIVATE";
   university: "NATIONAL" | "PRIVATE_HUMANITIES" | "PRIVATE_SCIENCE";
+  husbandParentalLeaveMonths: number;
+  wifeParentalLeaveMonths: number;
 };
 
 export type LifeEventInput = {
@@ -79,12 +86,17 @@ export type LoanResult = {
 
 export type AnnualCashFlow = {
   year: number;
+  calendarYear: number;
+  husbandAge: number;
+  wifeAge: number;
   husbandIncome: number;
   wifeIncome: number;
   householdIncome: number;
   loanPayment: number;
   livingCost: number;
   remainder: number;
+  husbandOnLeave: boolean;
+  wifeOnLeave: boolean;
 };
 
 export type AnnualAssetRow = {

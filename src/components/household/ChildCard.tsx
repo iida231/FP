@@ -24,6 +24,8 @@ const UNIVERSITY_OPTIONS: { value: ChildInput["university"]; label: string }[] =
   { value: "PRIVATE_SCIENCE",    label: "私立理系" },
 ];
 
+const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
+
 export default function ChildCard({ child, currentYear, onChange, onRemove }: Props) {
   const currentAge = currentYear - child.birthYear;
 
@@ -54,18 +56,56 @@ export default function ChildCard({ child, currentYear, onChange, onRemove }: Pr
         </button>
       </div>
 
-      {/* 生まれ年 */}
-      <div className="flex items-center gap-3">
-        <label className="text-sm text-gray-600 w-20 shrink-0">生まれ年</label>
+      {/* 生まれ年・月 */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <label className="text-sm text-gray-600 w-20 shrink-0">生まれ年月</label>
         <input
           type="number"
           value={child.birthYear}
           onChange={(e) => handleField("birthYear", Number(e.target.value))}
           min={currentYear - 30}
           max={currentYear + 5}
-          className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm w-28 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm w-24 focus:outline-none focus:ring-2 focus:ring-blue-400"
         />
         <span className="text-sm text-gray-400">年</span>
+        <select
+          value={child.birthMonth}
+          onChange={(e) => handleField("birthMonth", Number(e.target.value))}
+          className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+        >
+          {MONTHS.map((m) => (
+            <option key={m} value={m}>{m}月</option>
+          ))}
+        </select>
+      </div>
+
+      {/* 育休設定 */}
+      <div className="bg-blue-50 rounded-lg p-3 space-y-2">
+        <p className="text-xs font-semibold text-blue-700">育休設定（育児休業給付金: 最初6ヶ月67%・以降50%）</p>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <label className="block text-xs text-gray-600">夫の育休期間（ヶ月）</label>
+            <input
+              type="number"
+              min={0}
+              max={24}
+              value={child.husbandParentalLeaveMonths}
+              onChange={(e) => handleField("husbandParentalLeaveMonths", Number(e.target.value))}
+              className="block w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="block text-xs text-gray-600">妻の育休期間（ヶ月）</label>
+            <input
+              type="number"
+              min={0}
+              max={24}
+              value={child.wifeParentalLeaveMonths}
+              onChange={(e) => handleField("wifeParentalLeaveMonths", Number(e.target.value))}
+              className="block w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+            />
+          </div>
+        </div>
       </div>
 
       {/* 保育園〜高校: 公立/私立 */}

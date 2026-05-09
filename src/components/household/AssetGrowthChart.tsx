@@ -11,7 +11,7 @@ import {
   ReferenceLine,
   ResponsiveContainer,
 } from "recharts";
-import type { HouseholdInput, LoanResult } from "@/types";
+import type { HouseholdInput, IncomeInput, LoanResult } from "@/types";
 import { getSchoolStage } from "@/lib/educationCosts";
 import { calculateAssets } from "@/lib/calculations";
 
@@ -57,11 +57,13 @@ type Props = {
   householdInput: HouseholdInput;
   loanResult: LoanResult;
   currentYear: number;
+  incomeInput: IncomeInput;
 };
 
 export default function AssetGrowthChart({
   householdInput,
   loanResult,
+  incomeInput,
 }: Props) {
   // データが空の場合はフォールバック表示
   if (!loanResult.annual || loanResult.annual.length === 0) {
@@ -72,7 +74,7 @@ export default function AssetGrowthChart({
     );
   }
 
-  const data = calculateAssets(householdInput, loanResult);
+  const data = calculateAssets(householdInput, loanResult, incomeInput);
   const loanTermYears = loanResult.annual.length;
 
   // ライフイベントのマーカー

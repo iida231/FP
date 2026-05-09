@@ -24,9 +24,29 @@ export default function IncomeForm({ value, onChange }: Props) {
             夫
           </h3>
           <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700">
-              年収（万円）
-            </label>
+            <label className="block text-sm font-medium text-gray-700">現在の年齢（歳）</label>
+            <input
+              type="number"
+              min={18}
+              max={80}
+              value={value.husbandAge}
+              onChange={(e) => handleField("husbandAge", Number(e.target.value))}
+              className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-gray-700">退職予定年齢（歳）</label>
+            <input
+              type="number"
+              min={40}
+              max={80}
+              value={value.husbandRetirementAge}
+              onChange={(e) => handleField("husbandRetirementAge", Number(e.target.value))}
+              className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-gray-700">年収（万円）</label>
             <input
               type="number"
               min={0}
@@ -36,9 +56,7 @@ export default function IncomeForm({ value, onChange }: Props) {
             />
           </div>
           <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700">
-              年収上昇率（%）
-            </label>
+            <label className="block text-sm font-medium text-gray-700">年収上昇率（%）</label>
             <input
               type="number"
               step={0.1}
@@ -56,9 +74,29 @@ export default function IncomeForm({ value, onChange }: Props) {
             妻
           </h3>
           <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700">
-              年収（万円）
-            </label>
+            <label className="block text-sm font-medium text-gray-700">現在の年齢（歳）</label>
+            <input
+              type="number"
+              min={18}
+              max={80}
+              value={value.wifeAge}
+              onChange={(e) => handleField("wifeAge", Number(e.target.value))}
+              className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-gray-700">退職予定年齢（歳）</label>
+            <input
+              type="number"
+              min={40}
+              max={80}
+              value={value.wifeRetirementAge}
+              onChange={(e) => handleField("wifeRetirementAge", Number(e.target.value))}
+              className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-gray-700">年収（万円）</label>
             <input
               type="number"
               min={0}
@@ -68,9 +106,7 @@ export default function IncomeForm({ value, onChange }: Props) {
             />
           </div>
           <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700">
-              年収上昇率（%）
-            </label>
+            <label className="block text-sm font-medium text-gray-700">年収上昇率（%）</label>
             <input
               type="number"
               step={0.1}
@@ -85,9 +121,7 @@ export default function IncomeForm({ value, onChange }: Props) {
 
       {/* 月間生活費 */}
       <div className="space-y-1">
-        <label className="block text-sm font-medium text-gray-700">
-          月間生活費（万円）
-        </label>
+        <label className="block text-sm font-medium text-gray-700">月間生活費（万円）</label>
         <input
           type="number"
           min={0}
@@ -96,6 +130,11 @@ export default function IncomeForm({ value, onChange }: Props) {
           className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
         />
       </div>
+
+      {/* 育休の説明 */}
+      <p className="text-xs text-gray-400">
+        育休は子ども設定（家計診断タブ）で入力します。最初6ヶ月67%・以降50%（日本の給付金制度に準拠）
+      </p>
     </div>
   );
 }

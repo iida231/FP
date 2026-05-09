@@ -58,6 +58,10 @@ model Household {
   husbandRaiseRate     Float   @default(2)
   wifeRaiseRate        Float   @default(2)
   monthlyLivingCost    Float   @default(20)
+  husbandAge           Int     @default(30)
+  wifeAge              Int     @default(30)
+  husbandRetirementAge Int     @default(65)
+  wifeRetirementAge    Int     @default(65)
   husbandAssets        Float   @default(0)
   wifeAssets           Float   @default(0)
   monthlyInvestment    Float   @default(0)
@@ -69,15 +73,18 @@ model Household {
 }
 
 model Child {
-  id          Int        @id @default(autoincrement())
-  householdId Int
-  name        String
-  birthYear   Int
-  nursing     SchoolType @default(PUBLIC)
-  elementary  SchoolType @default(PUBLIC)
-  middle      SchoolType @default(PUBLIC)
-  high        SchoolType @default(PUBLIC)
-  university  UnivType   @default(NATIONAL)
+  id                        Int        @id @default(autoincrement())
+  householdId               Int
+  name                      String
+  birthYear                 Int
+  birthMonth                Int        @default(4)
+  nursing                   SchoolType @default(PUBLIC)
+  elementary                SchoolType @default(PUBLIC)
+  middle                    SchoolType @default(PUBLIC)
+  high                      SchoolType @default(PUBLIC)
+  university                UnivType   @default(NATIONAL)
+  husbandParentalLeaveMonths Int       @default(0)
+  wifeParentalLeaveMonths   Int        @default(12)
 
   household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
 }
