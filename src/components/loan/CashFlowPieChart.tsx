@@ -177,7 +177,12 @@ export default function CashFlowPieChart({ cashFlow, childList = [] }: Props) {
                   <span className="inline-block w-3 h-3 rounded-sm bg-green-200" />
                   住宅ローン控除
                 </span>
-                <span className="font-medium text-green-700">+{fmt(monthly.deduction)}</span>
+                <span className="font-medium text-green-700">
+                  +{fmt(monthly.deduction)}
+                  <span className="text-xs font-normal text-green-600 ml-1">
+                    （年間 {row.mortgageDeduction.toLocaleString()} 万円）
+                  </span>
+                </span>
               </div>
             )}
             <div className="flex justify-between items-center py-1.5">

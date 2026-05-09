@@ -325,9 +325,8 @@ export function calculateCashFlow(
     // 住宅ローン控除（年末ローン残高 × 控除率）
     // ペアローン: 各人が同額ローンを持つため人数倍、連帯債務: 合計額で計算
     const claimants = mortgageDeductionClaimants || 1;
-    const loanTypeMultiplier = mortgageDeductionLoanType === 'pair' ? claimants : 1;
     const rawDeduction = (mortgageDeductionRate > 0 && year <= mortgageDeductionYears)
-      ? Math.round(ann.balance / 10000 * mortgageDeductionRate / 100 * loanTypeMultiplier)
+      ? Math.round(ann.balance / 10000 * mortgageDeductionRate / 100 * claimants)
       : 0;
     const capTotal = mortgageDeductionMaxPerPerson > 0
       ? mortgageDeductionMaxPerPerson * claimants
