@@ -13,7 +13,6 @@ import type {
 import { getAnnualEducationCost } from "./educationCosts";
 
 // 各月に適用する年利(%)を返すヘルパー
-// month は 1 始まり（1〜n*12）
 function getRateForMonth(month: number, ratePeriods: RatePeriodInput[]): number {
   const year = Math.ceil(month / 12);
   for (const period of ratePeriods) {
@@ -21,13 +20,11 @@ function getRateForMonth(month: number, ratePeriods: RatePeriodInput[]): number 
       return period.annualRate;
     }
   }
-  // 見つからない場合は最後の期間の金利を返す
   return ratePeriods[ratePeriods.length - 1].annualRate;
 }
 
-// 育休期間中の月収割合を計算する
-// 日本の育児休業給付金制度: 最初6ヶ月=67%、以降=50%
-// 複数の子どもで育休が重なる場合は最も低い割合を適用
+// 育休期間中の収入割合を計算（日本の育児休業給付金制度）
+// 最初6ヶ月=67%、以降=50%。複数の子どもで重なる場合は最も低い割合を適用
 function getAnnualLeaveIncomeFactor(
   leaves: { birthYear: number; birthMonth: number; leaveMonths: number }[],
   calendarYear: number
@@ -49,23 +46,43 @@ function getAnnualLeaveIncomeFactor(
 }
 
 export function calculateLoan(input: LoanInput): LoanResult {
-  const { loanAmount, termYears, repaymentType, useFiveYearRule, use125PercentRule, ratePeriods } = input;
+  const {
+    loanAmount,
+    termYears,
+    repaymentType,
+    useFiveYearRule,
+    use125PercentRule,
+    ratePeriods,
+    bonusRepaymentPerOccurrence,
+  } = input;
   const P = loanAmount * 10000; // 万円 → 円
-  const n = termYears * 12;     // 総返済月数
+  const n = termYears * 12;
 
   const monthlyRows: MonthlyPaymentRow[] = [];
   let balance = P;
-  let fixedPayment = 0;        // 5年ルール: 固定月返済額
-  let prevFixedPayment = 0;    // 125%ルール: 前回の固定月返済額
-  let unpaidInterestAccum = 0; // 累積未払い利息
+  let fixedPayment = 0;
+  let prevFixedPayment = 0;
+  let unpaidInterestAccum = 0;
 
   for (let month = 1; month <= n; month++) {
-    const annualRate = getRateForMonth(month, ratePeriods);
-    const r = annualRate / 100 / 12; // 月利
+    if (balance <= 0) {
+      // 繰り上げ返済で完済済み
+      monthlyRows.push({
+        month,
+        principal: 0,
+        interest: 0,
+        unpaidInterest: 0,
+        balance: 0,
+        payment: 0,
+        bonusPayment: 0,
+      });
+      continue;
+    }
 
-    // 5年ルール: 5年ごとの見直し（または month=1 の初期化）
+    const annualRate = getRateForMonth(month, ratePeriods);
+    const r = annualRate / 100 / 12;
+
     if (useFiveYearRule && (month === 1 || month % 60 === 1)) {
-      // 残期間で再計算
       const remainingMonths = n - month + 1;
       let newPayment: number;
       if (r === 0) {
@@ -75,7 +92,6 @@ export function calculateLoan(input: LoanInput): LoanResult {
           (balance * (r * Math.pow(1 + r, remainingMonths))) /
           (Math.pow(1 + r, remainingMonths) - 1);
       }
-      // 125%ルール: 前回の1.25倍を上限とする
       if (use125PercentRule && prevFixedPayment > 0) {
         newPayment = Math.min(newPayment, prevFixedPayment * 1.25);
       }
@@ -83,28 +99,24 @@ export function calculateLoan(input: LoanInput): LoanResult {
       fixedPayment = newPayment;
     }
 
-    if (repaymentType === "EQUAL_INSTALLMENT") {
-      // 元利均等
-      let payment: number;
-      let principalPart: number;
-      let interestPart: number;
-      let unpaidThisMonth = 0;
+    let payment: number;
+    let principalPart: number;
+    let interestPart: number;
 
+    if (repaymentType === "EQUAL_INSTALLMENT") {
+      let unpaidThisMonth = 0;
       if (useFiveYearRule) {
-        // 5年ルール: fixedPayment 固定
         interestPart = balance * r;
         if (fixedPayment >= interestPart) {
           principalPart = fixedPayment - interestPart;
           payment = fixedPayment;
         } else {
-          // 未払い利息発生
           unpaidThisMonth = interestPart - fixedPayment;
           unpaidInterestAccum += unpaidThisMonth;
           principalPart = 0;
           payment = fixedPayment;
         }
       } else {
-        // 通常の元利均等（金利変更時は毎月残高と残期間で再計算）
         if (r === 0) {
           payment = P / n;
           principalPart = payment;
@@ -118,33 +130,32 @@ export function calculateLoan(input: LoanInput): LoanResult {
           principalPart = payment - interestPart;
         }
       }
-
-      balance = Math.max(0, balance - principalPart);
-
-      monthlyRows.push({
-        month,
-        principal: Math.round(principalPart),
-        interest: Math.round(interestPart),
-        unpaidInterest: Math.round(unpaidInterestAccum),
-        balance: Math.round(balance),
-        payment: Math.round(payment),
-      });
     } else {
       // 元金均等
-      const principalPart = P / n;
-      const interestPart = balance * r;
-      const payment = principalPart + interestPart;
-      balance = Math.max(0, balance - principalPart);
-
-      monthlyRows.push({
-        month,
-        principal: Math.round(principalPart),
-        interest: Math.round(interestPart),
-        unpaidInterest: 0,
-        balance: Math.round(balance),
-        payment: Math.round(payment),
-      });
+      const principalFixed = P / n;
+      interestPart = balance * r;
+      principalPart = principalFixed;
+      payment = principalPart + interestPart;
     }
+
+    balance = Math.max(0, balance - principalPart);
+
+    // ボーナス返済: 6ヶ月ごと（月6・12・18…）に元本から差し引く
+    let bonusPayment = 0;
+    if (bonusRepaymentPerOccurrence > 0 && month % 6 === 0 && balance > 0) {
+      bonusPayment = Math.min(bonusRepaymentPerOccurrence * 10000, balance);
+      balance -= bonusPayment;
+    }
+
+    monthlyRows.push({
+      month,
+      principal: Math.round(principalPart),
+      interest: Math.round(interestPart),
+      unpaidInterest: Math.round(unpaidInterestAccum),
+      balance: Math.round(balance),
+      payment: Math.round(payment),
+      bonusPayment: Math.round(bonusPayment),
+    });
   }
 
   // 年次集計
@@ -158,11 +169,13 @@ export function calculateLoan(input: LoanInput): LoanResult {
       totalPayment: yearRows.reduce((s, row) => s + row.payment, 0),
       totalPrincipal: yearRows.reduce((s, row) => s + row.principal, 0),
       totalInterest: yearRows.reduce((s, row) => s + row.interest, 0),
+      totalBonusPayment: yearRows.reduce((s, row) => s + row.bonusPayment, 0),
       balance: yearRows[yearRows.length - 1]?.balance ?? 0,
     });
   }
 
-  const totalPayment = monthlyRows.reduce((s, row) => s + row.payment, 0);
+  const totalPayment =
+    monthlyRows.reduce((s, row) => s + row.payment + row.bonusPayment, 0);
   const totalInterest = monthlyRows.reduce((s, row) => s + row.interest, 0);
 
   return { monthly: monthlyRows, annual, totalPayment, totalInterest };
@@ -186,7 +199,6 @@ export function calculateCashFlow(
     wifeRetirementAge,
   } = incomeInput;
 
-  // 退職するカレンダー年（その年から収入0）
   const husbandRetireCalYear = currentYear + (husbandRetirementAge - husbandAge);
   const wifeRetireCalYear = currentYear + (wifeRetirementAge - wifeAge);
 
@@ -196,7 +208,6 @@ export function calculateCashFlow(
     const hAge = husbandAge + year;
     const wAge = wifeAge + year;
 
-    // 育休の収入割合を計算（日本の育児休業給付金制度に基づく）
     const husbandLeaveFactor = getAnnualLeaveIncomeFactor(
       children.map((c) => ({
         birthYear: c.birthYear,
@@ -217,7 +228,6 @@ export function calculateCashFlow(
     const husbandRetired = calendarYear >= husbandRetireCalYear;
     const wifeRetired = calendarYear >= wifeRetireCalYear;
 
-    // 昇給を考慮した基本年収
     const husbandBaseIncome = Math.round(
       husbandAnnualIncome * Math.pow(1 + husbandRaiseRate / 100, year - 1)
     );
@@ -236,7 +246,10 @@ export function calculateCashFlow(
     const wifeOnLeave = !wifeRetired && wifeLeaveFactor < 1;
 
     const householdIncome = husbandIncome + wifeIncome;
-    const loanPayment = Math.round(ann.totalPayment / 10000); // 円 → 万円
+    // 月払い + ボーナス返済を合算して万円換算
+    const loanPayment = Math.round(
+      (ann.totalPayment + ann.totalBonusPayment) / 10000
+    );
     const livingCost = monthlyLivingCost * 12;
     const remainder = householdIncome - loanPayment - livingCost;
 
@@ -263,8 +276,10 @@ export function calculateAssets(
   incomeInput?: IncomeInput
 ): AnnualAssetRow[] {
   const {
-    husbandAssets,
-    wifeAssets,
+    husbandCashAssets,
+    husbandInvestmentAssets,
+    wifeCashAssets,
+    wifeInvestmentAssets,
     monthlyInvestment,
     averageYield,
     children,
@@ -272,10 +287,11 @@ export function calculateAssets(
   } = householdInput;
   const currentYear = new Date().getFullYear();
 
-  let assets = husbandAssets + wifeAssets; // 万円
+  // 現金資産は利回りなし、投資資産のみ複利で成長
+  let cashAssets = husbandCashAssets + wifeCashAssets;
+  let investmentAssets = husbandInvestmentAssets + wifeInvestmentAssets;
   const rows: AnnualAssetRow[] = [];
 
-  // 収入データがある場合は実際のキャッシュフローを使用
   const cashFlow = incomeInput
     ? calculateCashFlow(loanResult, incomeInput, children)
     : null;
@@ -284,31 +300,30 @@ export function calculateAssets(
     const year = i + 1;
     const calendarYear = currentYear + year;
 
-    // 教育費計算
     const childrenCost = children.reduce(
       (sum, child) => sum + getAnnualEducationCost(child, calendarYear),
       0
     );
-
-    // ライフイベント費用
     const lifeEventCost = lifeEvents
       .filter((e) => e.year === year)
       .reduce((sum, e) => sum + e.amount, 0);
 
-    // 年間純貯蓄額
-    // 収入データがある場合: 手残り（収入－ローン－生活費）から教育費・ライフイベントを差し引く
-    // ない場合: 月間投資額ベースのフォールバック
     const annualSavings = cashFlow
       ? cashFlow[i].remainder - childrenCost - lifeEventCost
       : monthlyInvestment * 12 - childrenCost - lifeEventCost;
 
-    // 資産推移: 複利成長 + 純貯蓄
-    assets = assets * (1 + averageYield / 100) + annualSavings;
+    // 投資資産: 複利成長 + 年間貯蓄
+    investmentAssets = investmentAssets * (1 + averageYield / 100) + annualSavings;
+    // 現金資産: 変化なし（利回り0%）
+
+    const totalAssets = Math.round(cashAssets + investmentAssets);
 
     rows.push({
       year,
-      assets: Math.round(assets),
-      loanBalance: Math.round(loanResult.annual[i].balance / 10000), // 円 → 万円
+      totalAssets,
+      cashAssets: Math.round(cashAssets),
+      investmentAssets: Math.round(investmentAssets),
+      loanBalance: Math.round(loanResult.annual[i].balance / 10000),
       childrenCost: Math.round(childrenCost),
       lifeEventCost: Math.round(lifeEventCost),
     });

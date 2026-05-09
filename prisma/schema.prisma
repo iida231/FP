@@ -25,16 +25,17 @@ enum UnivType {
 }
 
 model Simulation {
-  id                Int            @id @default(autoincrement())
-  name              String         @default("未保存のシミュレーション")
-  loanAmount        Float
-  termYears         Int
-  repaymentType     RepaymentType  @default(EQUAL_INSTALLMENT)
-  useFiveYearRule   Boolean        @default(false)
-  use125PercentRule Boolean        @default(false)
-  totalPayment      Float          @default(0)
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
+  id                          Int            @id @default(autoincrement())
+  name                        String         @default("未保存のシミュレーション")
+  loanAmount                  Float
+  termYears                   Int
+  repaymentType               RepaymentType  @default(EQUAL_INSTALLMENT)
+  useFiveYearRule             Boolean        @default(false)
+  use125PercentRule           Boolean        @default(false)
+  totalPayment                Float          @default(0)
+  bonusRepaymentPerOccurrence Float          @default(0)
+  createdAt                   DateTime       @default(now())
+  updatedAt                   DateTime       @updatedAt
 
   ratePeriods RatePeriod[]
   household   Household?
@@ -51,21 +52,23 @@ model RatePeriod {
 }
 
 model Household {
-  id                   Int     @id @default(autoincrement())
-  simulationId         Int     @unique
-  husbandAnnualIncome  Float   @default(0)
-  wifeAnnualIncome     Float   @default(0)
-  husbandRaiseRate     Float   @default(2)
-  wifeRaiseRate        Float   @default(2)
-  monthlyLivingCost    Float   @default(20)
-  husbandAge           Int     @default(30)
-  wifeAge              Int     @default(30)
-  husbandRetirementAge Int     @default(65)
-  wifeRetirementAge    Int     @default(65)
-  husbandAssets        Float   @default(0)
-  wifeAssets           Float   @default(0)
-  monthlyInvestment    Float   @default(0)
-  averageYield         Float   @default(3)
+  id                      Int     @id @default(autoincrement())
+  simulationId            Int     @unique
+  husbandAnnualIncome     Float   @default(0)
+  wifeAnnualIncome        Float   @default(0)
+  husbandRaiseRate        Float   @default(2)
+  wifeRaiseRate           Float   @default(2)
+  monthlyLivingCost       Float   @default(20)
+  husbandAge              Int     @default(30)
+  wifeAge                 Int     @default(30)
+  husbandRetirementAge    Int     @default(65)
+  wifeRetirementAge       Int     @default(65)
+  husbandCashAssets       Float   @default(0)
+  husbandInvestmentAssets Float   @default(0)
+  wifeCashAssets          Float   @default(0)
+  wifeInvestmentAssets    Float   @default(0)
+  monthlyInvestment       Float   @default(0)
+  averageYield            Float   @default(3)
 
   simulation Simulation @relation(fields: [simulationId], references: [id], onDelete: Cascade)
   children   Child[]

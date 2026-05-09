@@ -134,11 +134,20 @@ export default function AssetGrowthChart({
 
         <Line
           type="monotone"
-          dataKey="assets"
-          name="資産残高（万円）"
+          dataKey="totalAssets"
+          name="総資産（万円）"
           stroke="#22c55e"
           dot={false}
           strokeWidth={2}
+        />
+        <Line
+          type="monotone"
+          dataKey="investmentAssets"
+          name="投資資産（万円）"
+          stroke="#3b82f6"
+          dot={false}
+          strokeWidth={1.5}
+          strokeDasharray="4 2"
         />
         <Line
           type="monotone"

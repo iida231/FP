@@ -10,6 +10,7 @@ describe("calculateLoan", () => {
       useFiveYearRule: false,
       use125PercentRule: false,
       ratePeriods: [{ id: "1", startYear: 1, endYear: 35, annualRate: 1.0 }],
+      bonusRepaymentPerOccurrence: 0,
     });
     // 最初の月の返済額が約84686円（±100円以内）
     expect(result.monthly[0].payment).toBeCloseTo(84686, -2);
@@ -26,6 +27,7 @@ describe("calculateLoan", () => {
       useFiveYearRule: false,
       use125PercentRule: false,
       ratePeriods: [{ id: "1", startYear: 1, endYear: 35, annualRate: 1.0 }],
+      bonusRepaymentPerOccurrence: 0,
     });
     expect(result.monthly[0].payment).toBeGreaterThan(
       result.monthly[result.monthly.length - 1].payment
@@ -41,6 +43,7 @@ describe("calculateLoan", () => {
       useFiveYearRule: false,
       use125PercentRule: false,
       ratePeriods: [{ id: "1", startYear: 1, endYear: 35, annualRate: 1.0 }],
+      bonusRepaymentPerOccurrence: 0,
     });
     expect(result.totalPayment).toBeGreaterThan(3000 * 10000);
   });
@@ -57,6 +60,7 @@ describe("calculateLoan", () => {
         { id: "1", startYear: 1, endYear: 3, annualRate: 1.0 },
         { id: "2", startYear: 4, endYear: 35, annualRate: 3.0 },
       ],
+      bonusRepaymentPerOccurrence: 0,
     });
     // 月1の返済額と月36（金利変更後・5年以内）の返済額が同じ
     const m1 = result.monthly[0].payment;
@@ -76,6 +80,7 @@ describe("calculateLoan", () => {
         { id: "1", startYear: 1, endYear: 5, annualRate: 0.5 },
         { id: "2", startYear: 6, endYear: 35, annualRate: 5.0 },
       ],
+      bonusRepaymentPerOccurrence: 0,
     });
     // month 61（6年目最初）の返済額 <= month 1 の返済額 × 1.25
     const m1 = result.monthly[0].payment;

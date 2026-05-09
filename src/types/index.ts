@@ -14,6 +14,7 @@ export type LoanInput = {
   useFiveYearRule: boolean;
   use125PercentRule: boolean;
   ratePeriods: RatePeriodInput[];
+  bonusRepaymentPerOccurrence: number; // ボーナス返済額（1回あたり万円）、年2回適用
 };
 
 export type IncomeInput = {
@@ -50,8 +51,10 @@ export type LifeEventInput = {
 };
 
 export type HouseholdInput = {
-  husbandAssets: number;
-  wifeAssets: number;
+  husbandCashAssets: number;       // 夫の現金資産（万円）
+  husbandInvestmentAssets: number; // 夫の投資資産（万円）
+  wifeCashAssets: number;          // 妻の現金資産（万円）
+  wifeInvestmentAssets: number;    // 妻の投資資産（万円）
   monthlyInvestment: number;
   averageYield: number;
   children: ChildInput[];
@@ -67,6 +70,7 @@ export type MonthlyPaymentRow = {
   unpaidInterest: number;
   balance: number;
   payment: number;
+  bonusPayment: number; // ボーナス返済額（円）
 };
 
 export type AnnualLoanSummary = {
@@ -74,6 +78,7 @@ export type AnnualLoanSummary = {
   totalPayment: number;
   totalPrincipal: number;
   totalInterest: number;
+  totalBonusPayment: number; // 年間ボーナス返済合計（円）
   balance: number;
 };
 
@@ -101,7 +106,9 @@ export type AnnualCashFlow = {
 
 export type AnnualAssetRow = {
   year: number;
-  assets: number;
+  totalAssets: number;
+  cashAssets: number;
+  investmentAssets: number;
   loanBalance: number;
   childrenCost: number;
   lifeEventCost: number;
@@ -119,8 +126,10 @@ export type SimulationSummary = {
 };
 
 export type HouseholdDetail = IncomeInput & {
-  husbandAssets: number;
-  wifeAssets: number;
+  husbandCashAssets: number;
+  husbandInvestmentAssets: number;
+  wifeCashAssets: number;
+  wifeInvestmentAssets: number;
   monthlyInvestment: number;
   averageYield: number;
   children: Omit<ChildInput, "id">[];
@@ -139,4 +148,5 @@ export type SimulationDetail = {
   createdAt: string;
   ratePeriods: Omit<RatePeriodInput, "id">[];
   household: HouseholdDetail | null;
+  bonusRepaymentPerOccurrence: number;
 };

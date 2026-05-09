@@ -97,6 +97,22 @@ export default function LoanForm({ value, onChange }: Props) {
         </label>
       </div>
 
+      {/* ボーナス返済 */}
+      <div className="space-y-1">
+        <label className="block text-sm font-medium text-gray-700">
+          ボーナス返済額（1回あたり・万円）
+        </label>
+        <input
+          type="number"
+          min={0}
+          step={10}
+          value={value.bonusRepaymentPerOccurrence}
+          onChange={(e) => handleField("bonusRepaymentPerOccurrence", Number(e.target.value))}
+          className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        />
+        <p className="text-xs text-gray-400">年2回（6月・12月）元本を追加返済します。0の場合は適用なし。</p>
+      </div>
+
       {/* 金利期間テーブル */}
       <div className="space-y-1">
         <span className="block text-sm font-medium text-gray-700">金利設定</span>

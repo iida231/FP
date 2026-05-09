@@ -23,7 +23,7 @@ type Props = {
 };
 
 export default function CashFlowChart({ loanResult, incomeInput, childList }: Props) {
-  const [showTable, setShowTable] = useState(false);
+  const [showTable, setShowTable] = useState(true);
 
   if (!loanResult.annual || loanResult.annual.length === 0) {
     return (

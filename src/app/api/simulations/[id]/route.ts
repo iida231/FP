@@ -76,6 +76,7 @@ export async function PUT(
       useFiveYearRule,
       use125PercentRule,
       totalPayment,
+      bonusRepaymentPerOccurrence,
       ratePeriods,
       household,
     } = body as {
@@ -86,6 +87,7 @@ export async function PUT(
       useFiveYearRule: boolean;
       use125PercentRule: boolean;
       totalPayment: number;
+      bonusRepaymentPerOccurrence: number;
       ratePeriods: { startYear: number; endYear: number; annualRate: number }[];
       household?: {
         husbandAnnualIncome: number;
@@ -97,8 +99,10 @@ export async function PUT(
         wifeAge: number;
         husbandRetirementAge: number;
         wifeRetirementAge: number;
-        husbandAssets: number;
-        wifeAssets: number;
+        husbandCashAssets: number;
+        husbandInvestmentAssets: number;
+        wifeCashAssets: number;
+        wifeInvestmentAssets: number;
         monthlyInvestment: number;
         averageYield: number;
         children: {
@@ -146,6 +150,7 @@ export async function PUT(
           useFiveYearRule,
           use125PercentRule,
           totalPayment,
+          bonusRepaymentPerOccurrence: bonusRepaymentPerOccurrence ?? 0,
           ratePeriods: {
             create: ratePeriods.map(({ startYear, endYear, annualRate }) => ({
               startYear,
@@ -165,8 +170,10 @@ export async function PUT(
                   wifeAge: household.wifeAge ?? 30,
                   husbandRetirementAge: household.husbandRetirementAge ?? 65,
                   wifeRetirementAge: household.wifeRetirementAge ?? 65,
-                  husbandAssets: household.husbandAssets,
-                  wifeAssets: household.wifeAssets,
+                  husbandCashAssets: household.husbandCashAssets ?? 0,
+                  husbandInvestmentAssets: household.husbandInvestmentAssets ?? 0,
+                  wifeCashAssets: household.wifeCashAssets ?? 0,
+                  wifeInvestmentAssets: household.wifeInvestmentAssets ?? 0,
                   monthlyInvestment: household.monthlyInvestment,
                   averageYield: household.averageYield,
                   children: {

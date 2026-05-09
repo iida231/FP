@@ -7,12 +7,13 @@ import IncomeForm from "@/components/loan/IncomeForm";
 import LoanRepaymentChart from "@/components/loan/LoanRepaymentChart";
 import LoanSummaryCard from "@/components/loan/LoanSummaryCard";
 import CashFlowChart from "@/components/loan/CashFlowChart";
+import CashFlowPieChart from "@/components/loan/CashFlowPieChart";
 import ChildrenSimulator from "@/components/household/ChildrenSimulator";
 import AssetsForm from "@/components/household/AssetsForm";
 import LifeEventsTable from "@/components/household/LifeEventsTable";
 import AssetGrowthChart from "@/components/household/AssetGrowthChart";
 import SavedList from "@/components/saved/SavedList";
-import { calculateLoan } from "@/lib/calculations";
+import { calculateLoan, calculateCashFlow } from "@/lib/calculations";
 import type {
   LoanInput,
   IncomeInput,
@@ -37,6 +38,7 @@ const DEFAULT_LOAN_INPUT: LoanInput = {
   useFiveYearRule: false,
   use125PercentRule: false,
   ratePeriods: [DEFAULT_RATE_PERIOD],
+  bonusRepaymentPerOccurrence: 0,
 };
 
 const DEFAULT_INCOME_INPUT: IncomeInput = {
@@ -52,8 +54,10 @@ const DEFAULT_INCOME_INPUT: IncomeInput = {
 };
 
 const DEFAULT_HOUSEHOLD_INPUT: HouseholdInput = {
-  husbandAssets: 0,
-  wifeAssets: 0,
+  husbandCashAssets: 0,
+  husbandInvestmentAssets: 0,
+  wifeCashAssets: 0,
+  wifeInvestmentAssets: 0,
   monthlyInvestment: 3,
   averageYield: 3,
   children: [],
@@ -67,14 +71,15 @@ const DEFAULT_HOUSEHOLD_INPUT: HouseholdInput = {
 export default function Home() {
   const [activeTab, setActiveTab] = useState<Tab>("loan");
   const [loanInput, setLoanInput] = useState<LoanInput>(DEFAULT_LOAN_INPUT);
-  const [incomeInput, setIncomeInput] =
-    useState<IncomeInput>(DEFAULT_INCOME_INPUT);
-  const [householdInput, setHouseholdInput] = useState<HouseholdInput>(
-    DEFAULT_HOUSEHOLD_INPUT
-  );
+  const [incomeInput, setIncomeInput] = useState<IncomeInput>(DEFAULT_INCOME_INPUT);
+  const [householdInput, setHouseholdInput] = useState<HouseholdInput>(DEFAULT_HOUSEHOLD_INPUT);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
   const loanResult = useMemo(() => calculateLoan(loanInput), [loanInput]);
+  const cashFlow = useMemo(
+    () => calculateCashFlow(loanResult, incomeInput, householdInput.children),
+    [loanResult, incomeInput, householdInput.children]
+  );
 
   const currentYear = new Date().getFullYear();
 
@@ -93,6 +98,7 @@ export default function Home() {
           useFiveYearRule: loanInput.useFiveYearRule,
           use125PercentRule: loanInput.use125PercentRule,
           totalPayment: loanResult.totalPayment,
+          bonusRepaymentPerOccurrence: loanInput.bonusRepaymentPerOccurrence,
           ratePeriods: loanInput.ratePeriods.map(({ startYear, endYear, annualRate }) => ({
             startYear,
             endYear,
@@ -108,8 +114,10 @@ export default function Home() {
             wifeAge: incomeInput.wifeAge,
             husbandRetirementAge: incomeInput.husbandRetirementAge,
             wifeRetirementAge: incomeInput.wifeRetirementAge,
-            husbandAssets: householdInput.husbandAssets,
-            wifeAssets: householdInput.wifeAssets,
+            husbandCashAssets: householdInput.husbandCashAssets,
+            husbandInvestmentAssets: householdInput.husbandInvestmentAssets,
+            wifeCashAssets: householdInput.wifeCashAssets,
+            wifeInvestmentAssets: householdInput.wifeInvestmentAssets,
             monthlyInvestment: householdInput.monthlyInvestment,
             averageYield: householdInput.averageYield,
             children: householdInput.children.map(({ name: n, birthYear, birthMonth, nursing, elementary, middle, high, university, husbandParentalLeaveMonths, wifeParentalLeaveMonths }) => ({
@@ -136,6 +144,7 @@ export default function Home() {
       repaymentType: detail.repaymentType,
       useFiveYearRule: detail.useFiveYearRule,
       use125PercentRule: detail.use125PercentRule,
+      bonusRepaymentPerOccurrence: detail.bonusRepaymentPerOccurrence ?? 0,
       ratePeriods: detail.ratePeriods.map((rp, i) => ({
         id: String(i + 1),
         startYear: rp.startYear,
@@ -156,8 +165,10 @@ export default function Home() {
         wifeRetirementAge: detail.household.wifeRetirementAge ?? 65,
       });
       setHouseholdInput({
-        husbandAssets: detail.household.husbandAssets,
-        wifeAssets: detail.household.wifeAssets,
+        husbandCashAssets: detail.household.husbandCashAssets ?? 0,
+        husbandInvestmentAssets: detail.household.husbandInvestmentAssets ?? 0,
+        wifeCashAssets: detail.household.wifeCashAssets ?? 0,
+        wifeInvestmentAssets: detail.household.wifeInvestmentAssets ?? 0,
         monthlyInvestment: detail.household.monthlyInvestment,
         averageYield: detail.household.averageYield,
         children: detail.household.children.map((c, i) => ({
@@ -240,8 +251,16 @@ export default function Home() {
             </div>
 
             <div className="bg-white rounded-lg shadow-sm p-6">
+              <h2 className="text-base font-semibold text-gray-700 mb-2">
+                月間支払率
+              </h2>
+              <p className="text-xs text-gray-400 mb-4">年を選択して月間のローン・生活費・手残りの割合を確認できます</p>
+              <CashFlowPieChart cashFlow={cashFlow} />
+            </div>
+
+            <div className="bg-white rounded-lg shadow-sm p-6">
               <h2 className="text-base font-semibold text-gray-700 mb-4">
-                キャッシュフロー
+                キャッシュフロー・年収概算一覧
               </h2>
               <CashFlowChart
                 loanResult={loanResult}
