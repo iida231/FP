@@ -99,22 +99,22 @@ export default function CashFlowChart({ loanResult, incomeInput, childList, mort
             fill="#8b5cf6"
           />
 
-          {/* 手残り: プラスは緑、マイナスは赤 */}
-          <Bar dataKey="remainder" name="手残り（万円）">
-            {data.map((entry, index) => (
-              <Cell
-                key={`cell-${index}`}
-                fill={entry.remainder >= 0 ? "#22c55e" : "#ef4444"}
-              />
-            ))}
-          </Bar>
-
           {/* 折れ線: 世帯手取り */}
           <Line
             type="monotone"
             dataKey="householdTakeHome"
             name="世帯手取り（万円）"
             stroke="#22c55e"
+            dot={false}
+            strokeWidth={2}
+          />
+
+          {/* 折れ線: 手残り（黒） */}
+          <Line
+            type="monotone"
+            dataKey="remainder"
+            name="手残り（万円）"
+            stroke="#000000"
             dot={false}
             strokeWidth={2}
           />
