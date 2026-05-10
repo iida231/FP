@@ -153,6 +153,7 @@ export type AnnualCashFlow = {
   livingCost: number;
   childrenCost: number; // 教育費＋追加生活費＋習い事
   mortgageDeduction: number; // 住宅ローン控除額（万円/年）
+  childBenefit: number;     // 児童手当（万円/年）
   lifeEventCost: number;    // ライフイベント支出（万円/年）
   incomeEventAmount: number; // 収入イベント（万円/年）
   remainder: number;

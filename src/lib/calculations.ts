@@ -24,6 +24,19 @@ export function getExtraMonthlyForAge(child: ChildInput, age: number): number {
   return (child.extraMonthlyLivingCostUniversity ?? 0) + (child.monthlyExtracurricularUniversity ?? 0);
 }
 
+// 児童手当の年額を計算（2024年改正後ルール）
+// 第1・2子: 0-2歳=18万/年、3-17歳=12万/年
+// 第3子以降: 0-17歳=36万/年
+export function getAnnualChildBenefit(children: ChildInput[], calendarYear: number): number {
+  return children.reduce((total, child, index) => {
+    const age = calendarYear - child.birthYear;
+    if (age < 0 || age > 17) return total;
+    const isThirdOrLater = index >= 2;
+    const monthly = isThirdOrLater ? 3 : age <= 2 ? 1.5 : 1; // 万円/月
+    return total + monthly * 12;
+  }, 0);
+}
+
 // 各月に適用する年利(%)を返すヘルパー
 function getRateForMonth(month: number, ratePeriods: RatePeriodInput[]): number {
   const year = Math.ceil(month / 12);
@@ -360,7 +373,9 @@ export function calculateCashFlow(
       : 0;
     const totalIncomeEventAmount = incomeEventAmount + saleProceeds;
 
-    const remainder = householdTakeHome + effectiveMortgageDeduction
+    const childBenefit = Math.round(getAnnualChildBenefit(children, calendarYear) * 10) / 10;
+
+    const remainder = householdTakeHome + effectiveMortgageDeduction + childBenefit
       - effectiveLoanPayment - livingCost - childrenCost;
 
     return {
@@ -378,6 +393,7 @@ export function calculateCashFlow(
       monthlyRegularPayment: effectiveMonthlyRegularPayment,
       livingCost,
       childrenCost,
+      childBenefit,
       mortgageDeduction: effectiveMortgageDeduction,
       lifeEventCost,
       incomeEventAmount: totalIncomeEventAmount,

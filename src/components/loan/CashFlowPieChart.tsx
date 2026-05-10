@@ -53,6 +53,7 @@ export default function CashFlowPieChart({ cashFlow, childList = [] }: Props) {
     living: Math.round(row.livingCost / 12),
     children: Math.round(monthlyChildExtra),
     deduction: Math.round(row.mortgageDeduction / 12),
+    childBenefit: Math.round(row.childBenefit / 12 * 10) / 10,
     // remainder は householdTakeHome 基準。ボーナスなし時は手取りボーナス分を除く
     remainder: showBonus
       ? Math.round(row.remainder / 12)
@@ -172,6 +173,20 @@ export default function CashFlowPieChart({ cashFlow, childList = [] }: Props) {
                 )}
               </span>
             </div>
+            {monthly.childBenefit > 0 && (
+              <div className="flex justify-between items-center py-1.5">
+                <span className="flex items-center gap-1.5 text-teal-700">
+                  <span className="inline-block w-3 h-3 rounded-sm bg-teal-200" />
+                  児童手当
+                </span>
+                <span className="font-medium text-teal-700">
+                  +{fmt(monthly.childBenefit)}
+                  <span className="text-xs font-normal text-teal-600 ml-1">
+                    （年間 {row.childBenefit.toLocaleString()} 万円）
+                  </span>
+                </span>
+              </div>
+            )}
             {monthly.deduction > 0 && (
               <div className="flex justify-between items-center py-1.5">
                 <span className="flex items-center gap-1.5 text-green-700">

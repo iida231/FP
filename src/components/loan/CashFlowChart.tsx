@@ -175,6 +175,7 @@ export default function CashFlowChart({ loanResult, incomeInput, childList, mort
                 <th className="border border-gray-200 px-3 py-2 text-right whitespace-nowrap">妻の年収（万円）</th>
                 <th className="border border-gray-200 px-3 py-2 text-right whitespace-nowrap">世帯手取り（万円）</th>
                 <th className="border border-gray-200 px-3 py-2 text-right whitespace-nowrap">子ども費用（万円）</th>
+                <th className="border border-gray-200 px-3 py-2 text-right whitespace-nowrap">児童手当（万円）</th>
                 <th className="border border-gray-200 px-3 py-2 text-right whitespace-nowrap">ローン控除（万円）</th>
                 {hasLifeEvents && (
                   <th className="border border-gray-200 px-3 py-2 text-right whitespace-nowrap">一時収支（万円）</th>
@@ -223,6 +224,9 @@ export default function CashFlowChart({ loanResult, incomeInput, childList, mort
                     </td>
                     <td className="border border-gray-200 px-3 py-1.5 text-right text-violet-700">
                       {row.childrenCost > 0 ? row.childrenCost.toLocaleString() : "—"}
+                    </td>
+                    <td className="border border-gray-200 px-3 py-1.5 text-right text-teal-700">
+                      {row.childBenefit > 0 ? `+${row.childBenefit.toLocaleString()}` : "—"}
                     </td>
                     <td className="border border-gray-200 px-3 py-1.5 text-right text-green-700">
                       {row.mortgageDeduction > 0 ? `+${row.mortgageDeduction.toLocaleString()}` : "—"}
