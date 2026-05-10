@@ -148,6 +148,18 @@ export type AnnualCashFlow = {
   householdBaseIncome: number;     // ボーナスを除いた世帯収入（税引き前）
   householdTakeHome: number;       // 世帯手取り年収（ボーナス込み）
   householdBaseTakeHome: number;   // 世帯手取り年収（ボーナスなし）
+  husbandTakeHome: number;         // 夫の手取り年収（ボーナス込み）
+  wifeTakeHome: number;            // 妻の手取り年収（ボーナス込み）
+  husbandBaseTakeHome: number;     // 夫のボーナスなし手取り年収
+  wifeBaseTakeHome: number;        // 妻のボーナスなし手取り年収
+  husbandSummerBonus?: number;     // 夫の夏ボーナス（万円）
+  husbandWinterBonus?: number;     // 夫の冬ボーナス（万円）
+  wifeSummerBonus?: number;        // 妻の夏ボーナス（万円）
+  wifeWinterBonus?: number;        // 妻の冬ボーナス（万円）
+  householdSummerBonus?: number;   // 世帯の夏ボーナス合計（万円）
+  householdWinterBonus?: number;   // 世帯の冬ボーナス合計（万円）
+  husbandMonthlyTakeHome?: number; // 夫の月間手取り（万円・ボーナス込みの月換算）
+  wifeMonthlyTakeHome?: number;    // 妻の月間手取り（万円・ボーナス込みの月換算）
   loanPayment: number;
   monthlyRegularPayment: number; // 月額通常返済（万円・ボーナス含まず）
   livingCost: number;
@@ -159,6 +171,8 @@ export type AnnualCashFlow = {
   remainder: number;
   husbandOnLeave: boolean;
   wifeOnLeave: boolean;
+  husbandShortWork: boolean; // 夫の時短フラグ
+  wifeShortWork: boolean;    // 妻の時短フラグ
 };
 
 export type AnnualAssetRow = {

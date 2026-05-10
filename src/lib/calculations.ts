@@ -297,13 +297,48 @@ export function calculateCashFlow(
     const hMonthly = husbandMonthlyBase * hGrowth;
     const wMonthly = wifeMonthlyBase * wGrowth;
 
+    // helper: 指定月（1-12）が育休中か
+    const isOnLeaveDuringMonth = (leaves: { birthYear: number; birthMonth: number; leaveMonths: number }[], month: number) => {
+      for (const { birthYear, birthMonth, leaveMonths } of leaves) {
+        if (leaveMonths === 0) continue;
+        const monthsIntoLeave = (calendarYear - birthYear) * 12 + month - birthMonth;
+        if (monthsIntoLeave >= 0 && monthsIntoLeave < leaveMonths) return true;
+      }
+      return false;
+    };
+
+    const husbandLeaves = children.map((c) => ({ birthYear: c.birthYear, birthMonth: c.birthMonth, leaveMonths: c.husbandParentalLeaveMonths }));
+    const wifeLeaves = children.map((c) => ({ birthYear: c.birthYear, birthMonth: c.birthMonth, leaveMonths: c.wifeParentalLeaveMonths }));
+
+    // ボーナス分（育休時の発生月を考慮して、該当ボーナスが育休に該当する場合はその1回分を除外する）
+    const isHusbandSummerPaid = husbandSummerBonusMonths > 0 && !isOnLeaveDuringMonth(husbandLeaves, 6);
+    const isHusbandWinterPaid = husbandWinterBonusMonths > 0 && !isOnLeaveDuringMonth(husbandLeaves, 12);
+    const paidHusbandBonusMonths = (isHusbandSummerPaid ? husbandSummerBonusMonths : 0) + (isHusbandWinterPaid ? husbandWinterBonusMonths : 0);
+
+    const isWifeSummerPaid = wifeSummerBonusMonths > 0 && !isOnLeaveDuringMonth(wifeLeaves, 6);
+    const isWifeWinterPaid = wifeWinterBonusMonths > 0 && !isOnLeaveDuringMonth(wifeLeaves, 12);
+    const paidWifeBonusMonths = (isWifeSummerPaid ? wifeSummerBonusMonths : 0) + (isWifeWinterPaid ? wifeWinterBonusMonths : 0);
+
+    // 各人の総年収（ボーナスの除外/除外後を正確に反映）を用いて手取り率を推定
+    const husbandGrossAnnual = husbandRetired ? 0 : (hMonthly * 12 * husbandLeaveFactor + hMonthly * paidHusbandBonusMonths) * hGrowth * husbandShortWorkFactor;
+    const wifeGrossAnnual = wifeRetired ? 0 : (wMonthly * 12 * wifeLeaveFactor + wMonthly * paidWifeBonusMonths) * wGrowth * wifeShortWorkFactor;
+
+    // ボーナスを含まない総年収（ベースのみ）を用いた手取り推定
+    const husbandBaseGrossAnnual = husbandRetired ? 0 : (hMonthly * 12 * husbandLeaveFactor) * hGrowth * husbandShortWorkFactor;
+    const wifeBaseGrossAnnual = wifeRetired ? 0 : (wMonthly * 12 * wifeLeaveFactor) * wGrowth * wifeShortWorkFactor;
+
     // 12ヶ月分（育休・時短・退職考慮）
     const husbandBaseNet = husbandRetired ? 0 : Math.round(hMonthly * 12 * husbandLeaveFactor * husbandShortWorkFactor);
     const wifeBaseNet = wifeRetired ? 0 : Math.round(wMonthly * 12 * wifeLeaveFactor * wifeShortWorkFactor);
 
-    // ボーナス分（育休・時短・退職考慮）
-    const husbandBonus = husbandRetired ? 0 : Math.round(hMonthly * husbandBonusMonths * husbandLeaveFactor * husbandShortWorkFactor);
-    const wifeBonus = wifeRetired ? 0 : Math.round(wMonthly * wifeBonusMonths * wifeLeaveFactor * wifeShortWorkFactor);
+    // ボーナス計算（手取り換算）
+    const husbandSummerBonus = husbandRetired ? 0 : Math.round(hMonthly * (isHusbandSummerPaid ? husbandSummerBonusMonths : 0) * husbandLeaveFactor * husbandShortWorkFactor * getTakeHomeRate(husbandGrossAnnual));
+    const husbandWinterBonus = husbandRetired ? 0 : Math.round(hMonthly * (isHusbandWinterPaid ? husbandWinterBonusMonths : 0) * husbandLeaveFactor * husbandShortWorkFactor * getTakeHomeRate(husbandGrossAnnual));
+    const husbandBonus = husbandSummerBonus + husbandWinterBonus;
+
+    const wifeSummerBonus = wifeRetired ? 0 : Math.round(wMonthly * (isWifeSummerPaid ? wifeSummerBonusMonths : 0) * wifeLeaveFactor * wifeShortWorkFactor * getTakeHomeRate(wifeGrossAnnual));
+    const wifeWinterBonus = wifeRetired ? 0 : Math.round(wMonthly * (isWifeWinterPaid ? wifeWinterBonusMonths : 0) * wifeLeaveFactor * wifeShortWorkFactor * getTakeHomeRate(wifeGrossAnnual));
+    const wifeBonus = wifeSummerBonus + wifeWinterBonus;
 
     const husbandIncome = husbandBaseNet + husbandBonus;
     const wifeIncome = wifeBaseNet + wifeBonus;
@@ -314,18 +349,15 @@ export function calculateCashFlow(
     const householdIncome = husbandIncome + wifeIncome;
     const householdBaseIncome = husbandBaseNet + wifeBaseNet;
 
-    // 世帯手取り（各人の総年収ベースで手取り率を推定）
-    const husbandGrossAnnual = husbandRetired ? 0 : husbandAnnualIncome * hGrowth * husbandLeaveFactor * husbandShortWorkFactor;
-    const wifeGrossAnnual = wifeRetired ? 0 : wifeAnnualIncome * wGrowth * wifeLeaveFactor * wifeShortWorkFactor;
-    const householdTakeHome = Math.round(
-      husbandIncome * getTakeHomeRate(husbandGrossAnnual) +
-      wifeIncome * getTakeHomeRate(wifeGrossAnnual)
-    );
-    // ボーナスなし手取り（税引き率は総年収ベースで算出）
-    const householdBaseTakeHome = Math.round(
-      husbandBaseNet * getTakeHomeRate(husbandGrossAnnual) +
-      wifeBaseNet * getTakeHomeRate(wifeGrossAnnual)
-    );
+    const husbandTakeHome = Math.round(husbandIncome * getTakeHomeRate(husbandGrossAnnual));
+    const wifeTakeHome = Math.round(wifeIncome * getTakeHomeRate(wifeGrossAnnual));
+
+    const husbandBaseTakeHome = Math.round(husbandBaseNet * getTakeHomeRate(husbandBaseGrossAnnual));
+    const wifeBaseTakeHome = Math.round(wifeBaseNet * getTakeHomeRate(wifeBaseGrossAnnual));
+
+    const householdTakeHome = husbandTakeHome + wifeTakeHome;
+    // ボーナスなし手取り（税引き率はボーナス除外の総年収ベースで算出）
+    const householdBaseTakeHome = husbandBaseTakeHome + wifeBaseTakeHome;
 
     // 子ども費用（カスタム教育費 + 追加生活費 + 習い事）
     const childrenCost = children.reduce((sum, child) => {
@@ -389,6 +421,18 @@ export function calculateCashFlow(
       householdBaseIncome,
       householdTakeHome,
       householdBaseTakeHome,
+      husbandTakeHome,
+      wifeTakeHome,
+      husbandBaseTakeHome,
+      wifeBaseTakeHome,
+      husbandMonthlyTakeHome: Math.round(husbandBaseTakeHome / 12),
+      wifeMonthlyTakeHome: Math.round(wifeBaseTakeHome / 12),
+      husbandSummerBonus,
+      husbandWinterBonus,
+      wifeSummerBonus,
+      wifeWinterBonus,
+      householdSummerBonus: husbandSummerBonus + wifeSummerBonus,
+      householdWinterBonus: husbandWinterBonus + wifeWinterBonus,
       loanPayment: effectiveLoanPayment,
       monthlyRegularPayment: effectiveMonthlyRegularPayment,
       livingCost,
@@ -400,6 +444,8 @@ export function calculateCashFlow(
       remainder,
       husbandOnLeave,
       wifeOnLeave,
+      husbandShortWork: husbandShortWorkFactor < 1,
+      wifeShortWork: wifeShortWorkFactor < 1,
     };
   });
 }

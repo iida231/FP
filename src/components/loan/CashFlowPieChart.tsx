@@ -47,8 +47,13 @@ export default function CashFlowPieChart({ cashFlow, childList = [] }: Props) {
   }, 0);
 
   // 月額通常返済は calculateCashFlow が計算した monthlyRegularPayment を使用（ローン返済グラフと一致）
+  const husbandAnnual = showBonus ? (row.husbandTakeHome ?? 0) : (row.husbandBaseTakeHome ?? 0);
+  const wifeAnnual = showBonus ? (row.wifeTakeHome ?? 0) : (row.wifeBaseTakeHome ?? 0);
+
   const monthly = {
     income: Math.round(annualTakeHome / 12),
+    husband: Number.isFinite(husbandAnnual) ? Math.round(husbandAnnual / 12) : 0,
+    wife: Number.isFinite(wifeAnnual) ? Math.round(wifeAnnual / 12) : 0,
     loan: Math.round(row.monthlyRegularPayment * 10) / 10,
     living: Math.round(row.livingCost / 12),
     children: Math.round(monthlyChildExtra),
@@ -172,6 +177,15 @@ export default function CashFlowPieChart({ cashFlow, childList = [] }: Props) {
                   <span className="text-xs text-gray-400 ml-1">（ボーナスなし）</span>
                 )}
               </span>
+            </div>
+
+            <div className="flex justify-between items-center py-1.5">
+              <span className="text-gray-600">月間夫の手取り</span>
+              <span className="font-medium">{fmt(monthly.husband)}</span>
+            </div>
+            <div className="flex justify-between items-center py-1.5">
+              <span className="text-gray-600">月間妻の手取り</span>
+              <span className="font-medium">{fmt(monthly.wife)}</span>
             </div>
             {monthly.childBenefit > 0 && (
               <div className="flex justify-between items-center py-1.5">

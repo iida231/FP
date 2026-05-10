@@ -175,6 +175,12 @@ export default function CashFlowChart({ loanResult, incomeInput, childList, mort
                 <th className="border border-gray-200 px-3 py-2 text-right whitespace-nowrap">夫の年収（万円）</th>
                 <th className="border border-gray-200 px-3 py-2 text-right whitespace-nowrap">妻の年齢</th>
                 <th className="border border-gray-200 px-3 py-2 text-right whitespace-nowrap">妻の年収（万円）</th>
+                <th className="border border-gray-200 px-3 py-2 text-right whitespace-nowrap">夫の月収（手取り・万円）</th>
+                <th className="border border-gray-200 px-3 py-2 text-right whitespace-nowrap">夫の夏ボーナス（万円）</th>
+                <th className="border border-gray-200 px-3 py-2 text-right whitespace-nowrap">夫の冬ボーナス（万円）</th>
+                <th className="border border-gray-200 px-3 py-2 text-right whitespace-nowrap">妻の月収（手取り・万円）</th>
+                <th className="border border-gray-200 px-3 py-2 text-right whitespace-nowrap">妻の夏ボーナス（万円）</th>
+                <th className="border border-gray-200 px-3 py-2 text-right whitespace-nowrap">妻の冬ボーナス（万円）</th>
                 <th className="border border-gray-200 px-3 py-2 text-right whitespace-nowrap">世帯手取り（万円）</th>
                 <th className="border border-gray-200 px-3 py-2 text-right whitespace-nowrap">子ども費用（万円）</th>
                 <th className="border border-gray-200 px-3 py-2 text-right whitespace-nowrap">児童手当（万円）</th>
@@ -214,12 +220,33 @@ export default function CashFlowChart({ loanResult, incomeInput, childList, mort
                       {row.wifeOnLeave && (
                         <span className="ml-1 text-xs text-blue-600 font-medium">育休</span>
                       )}
+                      {row.wifeShortWork && (
+                        <span className="ml-1 text-xs text-orange-600 font-medium">時短</span>
+                      )}
                       {row.wifeIncome === 0 && !row.wifeOnLeave && (
                         <span className="ml-1 text-xs text-gray-400">退職</span>
                       )}
                     </td>
                     <td className="border border-gray-200 px-3 py-1.5 text-right">
                       {row.wifeIncome.toLocaleString()}
+                    </td>
+                    <td className="border border-gray-200 px-3 py-1.5 text-right">
+                      {(row.husbandMonthlyTakeHome ?? 0).toLocaleString()}
+                    </td>
+                    <td className="border border-gray-200 px-3 py-1.5 text-right text-amber-700">
+                      {row.husbandSummerBonus && row.husbandSummerBonus > 0 ? row.husbandSummerBonus.toLocaleString() : "—"}
+                    </td>
+                    <td className="border border-gray-200 px-3 py-1.5 text-right text-amber-700">
+                      {row.husbandWinterBonus && row.husbandWinterBonus > 0 ? row.husbandWinterBonus.toLocaleString() : "—"}
+                    </td>
+                    <td className="border border-gray-200 px-3 py-1.5 text-right">
+                      {(row.wifeMonthlyTakeHome ?? 0).toLocaleString()}
+                    </td>
+                    <td className="border border-gray-200 px-3 py-1.5 text-right text-amber-700">
+                      {row.wifeSummerBonus && row.wifeSummerBonus > 0 ? row.wifeSummerBonus.toLocaleString() : "—"}
+                    </td>
+                    <td className="border border-gray-200 px-3 py-1.5 text-right text-amber-700">
+                      {row.wifeWinterBonus && row.wifeWinterBonus > 0 ? row.wifeWinterBonus.toLocaleString() : "—"}
                     </td>
                     <td className="border border-gray-200 px-3 py-1.5 text-right font-medium">
                       {row.householdTakeHome.toLocaleString()}
