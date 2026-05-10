@@ -102,6 +102,10 @@ export type HouseholdInput = {
   children: ChildInput[];
   lifeEvents: LifeEventInput[];
   incomeEvents: IncomeEventInput[]; // 退職金・物件売却など収入イベント
+  propertySale?: {
+    year: number;      // ローン開始からの年数（1-based）
+    salePrice: number; // 売却価格（万円）
+  };
 };
 
 // ---- 計算結果型 ----

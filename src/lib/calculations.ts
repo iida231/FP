@@ -215,6 +215,7 @@ export function calculateCashFlow(
   mortgageDeductionLoanType: 'joint' | 'pair' = 'joint',
   lifeEvents: LifeEventInput[] = [],
   incomeEvents: IncomeEventInput[] = [],
+  propertySale?: { year: number; salePrice: number },
 ): AnnualCashFlow[] {
   const currentYear = new Date().getFullYear();
   const {
@@ -348,7 +349,19 @@ export function calculateCashFlow(
       .filter((e) => e.year === year)
       .reduce((sum, e) => sum + e.amount, 0);
 
-    const remainder = householdTakeHome + mortgageDeduction - loanPayment - livingCost - childrenCost;
+    // 物件売却: 売却年以降はローン支払い・控除を停止し、売却差益を加算
+    const afterSale = propertySale != null && year > propertySale.year;
+    const isSaleYear = propertySale != null && year === propertySale.year;
+    const effectiveLoanPayment = (afterSale || isSaleYear) ? 0 : loanPayment;
+    const effectiveMonthlyRegularPayment = (afterSale || isSaleYear) ? 0 : monthlyRegularPayment;
+    const effectiveMortgageDeduction = (afterSale || isSaleYear) ? 0 : mortgageDeduction;
+    const saleProceeds = isSaleYear
+      ? propertySale!.salePrice - Math.round(ann.balance / 10000)
+      : 0;
+    const totalIncomeEventAmount = incomeEventAmount + saleProceeds;
+
+    const remainder = householdTakeHome + effectiveMortgageDeduction
+      - effectiveLoanPayment - livingCost - childrenCost;
 
     return {
       year,
@@ -361,13 +374,13 @@ export function calculateCashFlow(
       householdBaseIncome,
       householdTakeHome,
       householdBaseTakeHome,
-      loanPayment,
-      monthlyRegularPayment,
+      loanPayment: effectiveLoanPayment,
+      monthlyRegularPayment: effectiveMonthlyRegularPayment,
       livingCost,
       childrenCost,
-      mortgageDeduction,
+      mortgageDeduction: effectiveMortgageDeduction,
       lifeEventCost,
-      incomeEventAmount,
+      incomeEventAmount: totalIncomeEventAmount,
       remainder,
       husbandOnLeave,
       wifeOnLeave,
@@ -395,6 +408,7 @@ export function calculateAssets(
     children,
     lifeEvents,
     incomeEvents,
+    propertySale,
   } = householdInput;
   const currentYear = new Date().getFullYear();
 
@@ -414,6 +428,7 @@ export function calculateAssets(
         mortgageDeductionLoanType,
         lifeEvents,
         incomeEvents ?? [],
+        propertySale,
       )
     : null;
 
@@ -458,7 +473,9 @@ export function calculateAssets(
       totalAssets,
       cashAssets: Math.round(cashAssets),
       investmentAssets: Math.round(investmentAssets),
-      loanBalance: Math.round(loanResult.annual[i].balance / 10000),
+      loanBalance: propertySale && year >= propertySale.year
+        ? 0
+        : Math.round(loanResult.annual[i].balance / 10000),
       childrenCost: Math.round(childrenCost),
       lifeEventCost: Math.round(lifeEventCost),
     });

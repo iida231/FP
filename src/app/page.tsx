@@ -102,8 +102,9 @@ export default function Home() {
       loanInput.mortgageDeductionLoanType ?? "joint",
       householdInput.lifeEvents,
       householdInput.incomeEvents ?? [],
+      householdInput.propertySale,
     ),
-    [loanResult, incomeInput, householdInput.children, householdInput.lifeEvents, householdInput.incomeEvents, loanInput.mortgageDeductionRate, loanInput.mortgageDeductionYears, loanInput.mortgageDeductionMaxPerPerson, loanInput.mortgageDeductionClaimants, loanInput.mortgageDeductionLoanType]
+    [loanResult, incomeInput, householdInput.children, householdInput.lifeEvents, householdInput.incomeEvents, householdInput.propertySale, loanInput.mortgageDeductionRate, loanInput.mortgageDeductionYears, loanInput.mortgageDeductionMaxPerPerson, loanInput.mortgageDeductionClaimants, loanInput.mortgageDeductionLoanType]
   );
 
   const currentYear = new Date().getFullYear();

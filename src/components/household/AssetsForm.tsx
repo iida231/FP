@@ -122,6 +122,65 @@ export default function AssetsForm({ value, onChange }: Props) {
         />
         <p className="text-xs text-gray-400 mt-1">現金資産の利回りは0%として計算します。</p>
       </div>
+
+      {/* 物件売却 */}
+      <div className="border border-gray-200 rounded-lg p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <input
+            id="propertySaleEnabled"
+            type="checkbox"
+            checked={value.propertySale != null}
+            onChange={(e) => {
+              onChange({
+                ...value,
+                propertySale: e.target.checked ? { year: 10, salePrice: 0 } : undefined,
+              });
+            }}
+            className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+          <label htmlFor="propertySaleEnabled" className="text-sm font-medium text-gray-700 cursor-pointer">
+            物件売却を設定する
+          </label>
+        </div>
+
+        {value.propertySale != null && (
+          <div className="space-y-3 pl-6">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">売却年（ローン開始から）</label>
+                <div className="flex items-center gap-1">
+                  <input
+                    type="number"
+                    min={1}
+                    value={value.propertySale.year}
+                    onChange={(e) => {
+                      const num = parseInt(e.target.value);
+                      onChange({ ...value, propertySale: { ...value.propertySale!, year: isNaN(num) ? 1 : num } });
+                    }}
+                    className="border border-gray-300 rounded px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-gray-500 whitespace-nowrap">年目</span>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">売却価格（万円）</label>
+                <input
+                  type="number"
+                  min={0}
+                  step={100}
+                  value={value.propertySale.salePrice}
+                  onChange={(e) => {
+                    const num = parseFloat(e.target.value);
+                    onChange({ ...value, propertySale: { ...value.propertySale!, salePrice: isNaN(num) ? 0 : num } });
+                  }}
+                  className="border border-gray-300 rounded px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+            <p className="text-xs text-gray-400">売却年にローン残債を自動返済し、差額（売却価格 − 残債）が現金資産に追加されます。売却年以降はローン返済が停止します。</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
