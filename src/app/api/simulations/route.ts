@@ -46,6 +46,7 @@ export async function POST(request: Request) {
       mortgageDeductionYears,
       mortgageDeductionMaxPerPerson,
       mortgageDeductionClaimants,
+      mortgageDeductionLoanType,
       ratePeriods,
       household,
     } = body as {
@@ -61,6 +62,7 @@ export async function POST(request: Request) {
       mortgageDeductionYears: number;
       mortgageDeductionMaxPerPerson?: number;
       mortgageDeductionClaimants?: number;
+      mortgageDeductionLoanType?: string;
       ratePeriods: { startYear: number; endYear: number; annualRate: number }[];
       household?: {
         husbandAnnualIncome: number;
@@ -82,6 +84,8 @@ export async function POST(request: Request) {
         husbandWinterBonusMonths: number;
         wifeSummerBonusMonths: number;
         wifeWinterBonusMonths: number;
+        propertySaleYear?: number | null;
+        propertySalePrice?: number | null;
         children: {
           name: string;
           birthYear: number;
@@ -100,12 +104,20 @@ export async function POST(request: Request) {
           customMiddleCost: number;
           customHighCost: number;
           customUniversityCost: number;
+          extraMonthlyLivingCostNursing: number;
+          extraMonthlyLivingCostElementary: number;
+          extraMonthlyLivingCostMiddle: number;
+          extraMonthlyLivingCostHigh: number;
+          extraMonthlyLivingCostUniversity: number;
+          monthlyExtracurricularNursing: number;
+          monthlyExtracurricularElementary: number;
+          monthlyExtracurricularMiddle: number;
+          monthlyExtracurricularHigh: number;
+          monthlyExtracurricularUniversity: number;
         }[];
-        lifeEvents: {
-          eventName: string;
-          year: number;
-          amount: number;
-        }[];
+        lifeEvents: { eventName: string; year: number; amount: number }[];
+        incomeEvents: { eventName: string; year: number; amount: number }[];
+        shortWorkPeriods: { person: string; startYear: number; endYear: number; ratio: number }[];
       };
     };
 
@@ -123,6 +135,7 @@ export async function POST(request: Request) {
         mortgageDeductionYears: mortgageDeductionYears ?? 0,
         mortgageDeductionMaxPerPerson: mortgageDeductionMaxPerPerson ?? 0,
         mortgageDeductionClaimants: mortgageDeductionClaimants ?? 1,
+        mortgageDeductionLoanType: mortgageDeductionLoanType ?? "joint",
         ratePeriods: {
           create: ratePeriods.map(({ startYear, endYear, annualRate }) => ({
             startYear,
@@ -152,6 +165,8 @@ export async function POST(request: Request) {
                 husbandWinterBonusMonths: household.husbandWinterBonusMonths ?? 0,
                 wifeSummerBonusMonths: household.wifeSummerBonusMonths ?? 0,
                 wifeWinterBonusMonths: household.wifeWinterBonusMonths ?? 0,
+                propertySaleYear: household.propertySaleYear ?? null,
+                propertySalePrice: household.propertySalePrice ?? null,
                 children: {
                   create: household.children.map((c) => ({
                     name: c.name,
@@ -171,6 +186,16 @@ export async function POST(request: Request) {
                     customMiddleCost: c.customMiddleCost ?? 49,
                     customHighCost: c.customHighCost ?? 51,
                     customUniversityCost: c.customUniversityCost ?? 82,
+                    extraMonthlyLivingCostNursing: c.extraMonthlyLivingCostNursing ?? 0,
+                    extraMonthlyLivingCostElementary: c.extraMonthlyLivingCostElementary ?? 0,
+                    extraMonthlyLivingCostMiddle: c.extraMonthlyLivingCostMiddle ?? 0,
+                    extraMonthlyLivingCostHigh: c.extraMonthlyLivingCostHigh ?? 0,
+                    extraMonthlyLivingCostUniversity: c.extraMonthlyLivingCostUniversity ?? 0,
+                    monthlyExtracurricularNursing: c.monthlyExtracurricularNursing ?? 0,
+                    monthlyExtracurricularElementary: c.monthlyExtracurricularElementary ?? 0,
+                    monthlyExtracurricularMiddle: c.monthlyExtracurricularMiddle ?? 0,
+                    monthlyExtracurricularHigh: c.monthlyExtracurricularHigh ?? 0,
+                    monthlyExtracurricularUniversity: c.monthlyExtracurricularUniversity ?? 0,
                   })),
                 },
                 lifeEvents: {
@@ -178,6 +203,21 @@ export async function POST(request: Request) {
                     eventName: e.eventName,
                     year: e.year,
                     amount: e.amount,
+                  })),
+                },
+                incomeEvents: {
+                  create: (household.incomeEvents ?? []).map((e) => ({
+                    eventName: e.eventName,
+                    year: e.year,
+                    amount: e.amount,
+                  })),
+                },
+                shortWorkPeriods: {
+                  create: (household.shortWorkPeriods ?? []).map((p) => ({
+                    person: p.person,
+                    startYear: p.startYear,
+                    endYear: p.endYear,
+                    ratio: p.ratio,
                   })),
                 },
               },

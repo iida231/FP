@@ -432,6 +432,21 @@ export function calculateAssets(
   let investmentAssets = husbandInvestmentAssets + wifeInvestmentAssets;
   const rows: AnnualAssetRow[] = [];
 
+  // year=0: ローン開始時点（返済前）のスナップショット
+  if (loanResult.monthly.length > 0) {
+    const m0 = loanResult.monthly[0];
+    const initialLoanBalance = Math.round((m0.balance + m0.principal) / 10000);
+    rows.push({
+      year: 0,
+      totalAssets: Math.round(cashAssets + investmentAssets),
+      cashAssets: Math.round(cashAssets),
+      investmentAssets: Math.round(investmentAssets),
+      loanBalance: propertySale && 0 >= propertySale.year ? 0 : initialLoanBalance,
+      childrenCost: 0,
+      lifeEventCost: 0,
+    });
+  }
+
   const cashFlow = incomeInput
     ? calculateCashFlow(
         loanResult,

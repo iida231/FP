@@ -105,12 +105,14 @@ export default function SavedList({ onLoadSimulation }: Props) {
 
   async function handleView(id: number) {
     const res = await fetch(`/api/simulations/${id}`);
+    if (!res.ok) { alert("読み込みに失敗しました"); return; }
     const detail: SimulationDetail = await res.json();
     onLoadSimulation(detail);
   }
 
   async function handleDuplicate(id: number) {
     const res = await fetch(`/api/simulations/${id}`);
+    if (!res.ok) return;
     const detail: SimulationDetail = await res.json();
     await fetch("/api/simulations", {
       method: "POST",
@@ -127,6 +129,7 @@ export default function SavedList({ onLoadSimulation }: Props) {
 
   async function handleRename(id: number, newName: string) {
     const res = await fetch(`/api/simulations/${id}`);
+    if (!res.ok) return;
     const detail: SimulationDetail = await res.json();
     await fetch(`/api/simulations/${id}`, {
       method: "PUT",

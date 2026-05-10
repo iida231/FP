@@ -29,9 +29,10 @@ type Props = {
   mortgageDeductionLoanType?: 'joint' | 'pair';
   lifeEvents?: LifeEventInput[];
   incomeEvents?: IncomeEventInput[];
+  propertySale?: { year: number; salePrice: number };
 };
 
-export default function CashFlowChart({ loanResult, incomeInput, childList, mortgageDeductionRate = 0, mortgageDeductionYears = 0, mortgageDeductionMaxPerPerson = 0, mortgageDeductionClaimants = 1, mortgageDeductionLoanType = 'joint', lifeEvents = [], incomeEvents = [] }: Props) {
+export default function CashFlowChart({ loanResult, incomeInput, childList, mortgageDeductionRate = 0, mortgageDeductionYears = 0, mortgageDeductionMaxPerPerson = 0, mortgageDeductionClaimants = 1, mortgageDeductionLoanType = 'joint', lifeEvents = [], incomeEvents = [], propertySale }: Props) {
   const [showTable, setShowTable] = useState(true);
 
   if (!loanResult.annual || loanResult.annual.length === 0) {
@@ -53,9 +54,10 @@ export default function CashFlowChart({ loanResult, incomeInput, childList, mort
     mortgageDeductionLoanType,
     lifeEvents,
     incomeEvents,
+    propertySale,
   );
 
-  const hasLifeEvents = lifeEvents.length > 0 || incomeEvents.length > 0;
+  const hasLifeEvents = lifeEvents.length > 0 || incomeEvents.length > 0 || propertySale != null;
 
   // ライフイベント込みの実質手残りを付加
   const chartData = data.map((d) => ({

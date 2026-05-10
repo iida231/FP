@@ -3,6 +3,7 @@
 import {
   AreaChart,
   Area,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -124,6 +125,14 @@ export default function FinancialBreakdownChart({
           stackId="assets"
           stroke="#3b82f6"
           fill="#bfdbfe"
+        />
+        <Line
+          type="monotone"
+          dataKey="totalAssets"
+          name="総資産（万円）"
+          stroke="#22c55e"
+          strokeWidth={2}
+          dot={false}
         />
       </AreaChart>
     </ResponsiveContainer>

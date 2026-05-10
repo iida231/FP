@@ -202,6 +202,10 @@ export type HouseholdDetail = IncomeInput & {
   averageYield: number;
   children: HouseholdChildDetail[];
   lifeEvents: Omit<LifeEventInput, "id">[];
+  incomeEvents: Omit<IncomeEventInput, "id">[];
+  shortWorkPeriods: { person: string; startYear: number; endYear: number; ratio: number }[];
+  propertySaleYear?: number | null;
+  propertySalePrice?: number | null;
 };
 
 export type SimulationDetail = {
@@ -221,4 +225,5 @@ export type SimulationDetail = {
   mortgageDeductionYears: number;
   mortgageDeductionMaxPerPerson?: number;
   mortgageDeductionClaimants?: number;
+  mortgageDeductionLoanType?: string;
 };

@@ -127,6 +127,9 @@ export default function Home() {
           bonusRepaymentPerOccurrence: loanInput.bonusRepaymentPerOccurrence,
           mortgageDeductionRate: loanInput.mortgageDeductionRate,
           mortgageDeductionYears: loanInput.mortgageDeductionYears,
+          mortgageDeductionMaxPerPerson: loanInput.mortgageDeductionMaxPerPerson ?? 0,
+          mortgageDeductionClaimants: loanInput.mortgageDeductionClaimants ?? 1,
+          mortgageDeductionLoanType: loanInput.mortgageDeductionLoanType ?? "joint",
           ratePeriods: loanInput.ratePeriods.map(({ startYear, endYear, annualRate }) => ({
             startYear,
             endYear,
@@ -152,18 +155,34 @@ export default function Home() {
             husbandWinterBonusMonths: incomeInput.husbandWinterBonusMonths,
             wifeSummerBonusMonths: incomeInput.wifeSummerBonusMonths,
             wifeWinterBonusMonths: incomeInput.wifeWinterBonusMonths,
+            propertySaleYear: householdInput.propertySale?.year ?? null,
+            propertySalePrice: householdInput.propertySale?.salePrice ?? null,
             children: householdInput.children.map((c) => ({
               name: c.name, birthYear: c.birthYear, birthMonth: c.birthMonth,
               nursing: c.nursing, elementary: c.elementary, middle: c.middle, high: c.high, university: c.university,
               husbandParentalLeaveMonths: c.husbandParentalLeaveMonths, wifeParentalLeaveMonths: c.wifeParentalLeaveMonths,
-              // 段階別追加費用の平均をDBに保存（後方互換）
-              extraMonthlyLivingCost: Math.round(((c.extraMonthlyLivingCostNursing ?? 0) + (c.extraMonthlyLivingCostElementary ?? 0) + (c.extraMonthlyLivingCostMiddle ?? 0) + (c.extraMonthlyLivingCostHigh ?? 0) + (c.extraMonthlyLivingCostUniversity ?? 0)) / 5 * 10) / 10,
-              monthlyExtracurricular: Math.round(((c.monthlyExtracurricularNursing ?? 0) + (c.monthlyExtracurricularElementary ?? 0) + (c.monthlyExtracurricularMiddle ?? 0) + (c.monthlyExtracurricularHigh ?? 0) + (c.monthlyExtracurricularUniversity ?? 0)) / 5 * 10) / 10,
+              extraMonthlyLivingCostNursing: c.extraMonthlyLivingCostNursing ?? 0,
+              extraMonthlyLivingCostElementary: c.extraMonthlyLivingCostElementary ?? 0,
+              extraMonthlyLivingCostMiddle: c.extraMonthlyLivingCostMiddle ?? 0,
+              extraMonthlyLivingCostHigh: c.extraMonthlyLivingCostHigh ?? 0,
+              extraMonthlyLivingCostUniversity: c.extraMonthlyLivingCostUniversity ?? 0,
+              monthlyExtracurricularNursing: c.monthlyExtracurricularNursing ?? 0,
+              monthlyExtracurricularElementary: c.monthlyExtracurricularElementary ?? 0,
+              monthlyExtracurricularMiddle: c.monthlyExtracurricularMiddle ?? 0,
+              monthlyExtracurricularHigh: c.monthlyExtracurricularHigh ?? 0,
+              monthlyExtracurricularUniversity: c.monthlyExtracurricularUniversity ?? 0,
               customNursingCost: c.customNursingCost, customElementaryCost: c.customElementaryCost, customMiddleCost: c.customMiddleCost, customHighCost: c.customHighCost, customUniversityCost: c.customUniversityCost,
             })),
             lifeEvents: householdInput.lifeEvents.map(({ eventName, year, amount }) => ({
               eventName, year, amount,
             })),
+            incomeEvents: (householdInput.incomeEvents ?? []).map(({ eventName, year, amount }) => ({
+              eventName, year, amount,
+            })),
+            shortWorkPeriods: [
+              ...(incomeInput.husbandShortWorkPeriods ?? []).map(({ startYear, endYear, ratio }) => ({ person: "husband", startYear, endYear, ratio })),
+              ...(incomeInput.wifeShortWorkPeriods ?? []).map(({ startYear, endYear, ratio }) => ({ person: "wife", startYear, endYear, ratio })),
+            ],
           },
         }),
       });
@@ -187,7 +206,8 @@ export default function Home() {
       mortgageDeductionYears: detail.mortgageDeductionYears ?? 13,
       mortgageDeductionMaxPerPerson: detail.mortgageDeductionMaxPerPerson ?? 0,
       mortgageDeductionClaimants: detail.mortgageDeductionClaimants ?? 1,
-      ratePeriods: detail.ratePeriods.map((rp, i) => ({
+      mortgageDeductionLoanType: (detail.mortgageDeductionLoanType ?? "joint") as "joint" | "pair",
+      ratePeriods: (detail.ratePeriods ?? []).map((rp, i) => ({
         id: String(i + 1),
         startYear: rp.startYear,
         endYear: rp.endYear,
@@ -209,8 +229,12 @@ export default function Home() {
         husbandWinterBonusMonths: detail.household.husbandWinterBonusMonths ?? 0,
         wifeSummerBonusMonths: detail.household.wifeSummerBonusMonths ?? 0,
         wifeWinterBonusMonths: detail.household.wifeWinterBonusMonths ?? 0,
-        husbandShortWorkPeriods: [],
-        wifeShortWorkPeriods: [],
+        husbandShortWorkPeriods: (detail.household.shortWorkPeriods ?? [])
+          .filter((p) => p.person === "husband")
+          .map(({ startYear, endYear, ratio }) => ({ startYear, endYear, ratio })),
+        wifeShortWorkPeriods: (detail.household.shortWorkPeriods ?? [])
+          .filter((p) => p.person === "wife")
+          .map(({ startYear, endYear, ratio }) => ({ startYear, endYear, ratio })),
       });
       setHouseholdInput({
         husbandCashAssets: detail.household.husbandCashAssets ?? 0,
@@ -231,17 +255,16 @@ export default function Home() {
           university: c.university,
           husbandParentalLeaveMonths: c.husbandParentalLeaveMonths ?? 0,
           wifeParentalLeaveMonths: c.wifeParentalLeaveMonths ?? 12,
-          // DBには単一値で保存されているため、読み込み時は全段階に同じ値を設定
-          extraMonthlyLivingCostNursing:    c.extraMonthlyLivingCost ?? 2,
-          extraMonthlyLivingCostElementary: c.extraMonthlyLivingCost ?? 2,
-          extraMonthlyLivingCostMiddle:     c.extraMonthlyLivingCost ?? 2,
-          extraMonthlyLivingCostHigh:       c.extraMonthlyLivingCost ?? 2,
-          extraMonthlyLivingCostUniversity: c.extraMonthlyLivingCost ?? 2,
-          monthlyExtracurricularNursing:    c.monthlyExtracurricular ?? 0,
-          monthlyExtracurricularElementary: c.monthlyExtracurricular ?? 0,
-          monthlyExtracurricularMiddle:     c.monthlyExtracurricular ?? 0,
-          monthlyExtracurricularHigh:       c.monthlyExtracurricular ?? 0,
-          monthlyExtracurricularUniversity: c.monthlyExtracurricular ?? 0,
+          extraMonthlyLivingCostNursing:    c.extraMonthlyLivingCostNursing    ?? c.extraMonthlyLivingCost ?? 0,
+          extraMonthlyLivingCostElementary: c.extraMonthlyLivingCostElementary ?? c.extraMonthlyLivingCost ?? 0,
+          extraMonthlyLivingCostMiddle:     c.extraMonthlyLivingCostMiddle     ?? c.extraMonthlyLivingCost ?? 0,
+          extraMonthlyLivingCostHigh:       c.extraMonthlyLivingCostHigh       ?? c.extraMonthlyLivingCost ?? 0,
+          extraMonthlyLivingCostUniversity: c.extraMonthlyLivingCostUniversity ?? c.extraMonthlyLivingCost ?? 0,
+          monthlyExtracurricularNursing:    c.monthlyExtracurricularNursing    ?? c.monthlyExtracurricular ?? 0,
+          monthlyExtracurricularElementary: c.monthlyExtracurricularElementary ?? c.monthlyExtracurricular ?? 0,
+          monthlyExtracurricularMiddle:     c.monthlyExtracurricularMiddle     ?? c.monthlyExtracurricular ?? 0,
+          monthlyExtracurricularHigh:       c.monthlyExtracurricularHigh       ?? c.monthlyExtracurricular ?? 0,
+          monthlyExtracurricularUniversity: c.monthlyExtracurricularUniversity ?? c.monthlyExtracurricular ?? 0,
           customNursingCost:    c.customNursingCost    ?? 19,
           customElementaryCost: c.customElementaryCost ?? 5,
           customMiddleCost:     c.customMiddleCost     ?? 49,
@@ -254,7 +277,15 @@ export default function Home() {
           year: e.year,
           amount: e.amount,
         })),
-        incomeEvents: [],
+        incomeEvents: (detail.household.incomeEvents ?? []).map((e, i) => ({
+          id: String(i + 1),
+          eventName: e.eventName,
+          year: e.year,
+          amount: e.amount,
+        })),
+        propertySale: detail.household.propertySaleYear != null
+          ? { year: detail.household.propertySaleYear, salePrice: detail.household.propertySalePrice ?? 0 }
+          : undefined,
       });
     }
     setActiveTab("loan");
@@ -338,6 +369,7 @@ export default function Home() {
                 mortgageDeductionLoanType={loanInput.mortgageDeductionLoanType}
                 lifeEvents={householdInput.lifeEvents}
                 incomeEvents={householdInput.incomeEvents ?? []}
+                propertySale={householdInput.propertySale}
               />
             </div>
           </>

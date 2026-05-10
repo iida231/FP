@@ -38,6 +38,7 @@ model Simulation {
   mortgageDeductionYears      Int            @default(0)
   mortgageDeductionMaxPerPerson Float        @default(0)
   mortgageDeductionClaimants    Int          @default(1)
+  mortgageDeductionLoanType   String         @default("joint")
   createdAt                   DateTime       @default(now())
   updatedAt                   DateTime       @updatedAt
 
@@ -77,10 +78,14 @@ model Household {
   husbandWinterBonusMonths    Float   @default(0)
   wifeSummerBonusMonths       Float   @default(0)
   wifeWinterBonusMonths       Float   @default(0)
+  propertySaleYear            Int?
+  propertySalePrice           Float?
 
-  simulation Simulation @relation(fields: [simulationId], references: [id], onDelete: Cascade)
-  children   Child[]
-  lifeEvents LifeEvent[]
+  simulation       Simulation      @relation(fields: [simulationId], references: [id], onDelete: Cascade)
+  children         Child[]
+  lifeEvents       LifeEvent[]
+  incomeEvents     IncomeEvent[]
+  shortWorkPeriods ShortWorkPeriod[]
 }
 
 model Child {
@@ -103,6 +108,16 @@ model Child {
   customMiddleCost          Float      @default(49)
   customHighCost            Float      @default(51)
   customUniversityCost      Float      @default(82)
+  extraMonthlyLivingCostNursing    Float @default(0)
+  extraMonthlyLivingCostElementary Float @default(0)
+  extraMonthlyLivingCostMiddle     Float @default(0)
+  extraMonthlyLivingCostHigh       Float @default(0)
+  extraMonthlyLivingCostUniversity Float @default(0)
+  monthlyExtracurricularNursing    Float @default(0)
+  monthlyExtracurricularElementary Float @default(0)
+  monthlyExtracurricularMiddle     Float @default(0)
+  monthlyExtracurricularHigh       Float @default(0)
+  monthlyExtracurricularUniversity Float @default(0)
 
   household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
 }
@@ -113,6 +128,27 @@ model LifeEvent {
   eventName   String
   year        Int
   amount      Float
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+}
+
+model IncomeEvent {
+  id          Int       @id @default(autoincrement())
+  householdId Int
+  eventName   String
+  year        Int
+  amount      Float
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+}
+
+model ShortWorkPeriod {
+  id          Int       @id @default(autoincrement())
+  householdId Int
+  person      String
+  startYear   Int
+  endYear     Int
+  ratio       Float
 
   household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
 }
