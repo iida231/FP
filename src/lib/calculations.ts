@@ -9,6 +9,8 @@ import type {
   AnnualCashFlow,
   AnnualAssetRow,
   RatePeriodInput,
+  LifeEventInput,
+  IncomeEventInput,
 } from "@/types";
 import { getAnnualEducationCost, getAnnualEducationCostCustom } from "./educationCosts";
 
@@ -211,6 +213,8 @@ export function calculateCashFlow(
   mortgageDeductionMaxPerPerson = 0,
   mortgageDeductionClaimants = 1,
   mortgageDeductionLoanType: 'joint' | 'pair' = 'joint',
+  lifeEvents: LifeEventInput[] = [],
+  incomeEvents: IncomeEventInput[] = [],
 ): AnnualCashFlow[] {
   const currentYear = new Date().getFullYear();
   const {
@@ -303,6 +307,11 @@ export function calculateCashFlow(
       husbandIncome * getTakeHomeRate(husbandGrossAnnual) +
       wifeIncome * getTakeHomeRate(wifeGrossAnnual)
     );
+    // ボーナスなし手取り（税引き率は総年収ベースで算出）
+    const householdBaseTakeHome = Math.round(
+      husbandBaseNet * getTakeHomeRate(husbandGrossAnnual) +
+      wifeBaseNet * getTakeHomeRate(wifeGrossAnnual)
+    );
 
     // 子ども費用（カスタム教育費 + 追加生活費 + 習い事）
     const childrenCost = children.reduce((sum, child) => {
@@ -322,16 +331,22 @@ export function calculateCashFlow(
 
     const livingCost = monthlyLivingCost * 12;
 
-    // 住宅ローン控除（年末ローン残高 × 控除率）
-    // ペアローン: 各人が同額ローンを持つため人数倍、連帯債務: 合計額で計算
+    // 住宅ローン控除: 年末残高を一人当たりの控除対象上限でキャップしてから控除率を適用
     const claimants = mortgageDeductionClaimants || 1;
-    const rawDeduction = (mortgageDeductionRate > 0 && year <= mortgageDeductionYears)
-      ? Math.round(ann.balance / 10000 * mortgageDeductionRate / 100 * claimants)
+    const balanceManYen = ann.balance / 10000;
+    const cappedBalance = mortgageDeductionMaxPerPerson > 0
+      ? Math.min(balanceManYen, mortgageDeductionMaxPerPerson * claimants)
+      : balanceManYen;
+    const mortgageDeduction = (mortgageDeductionRate > 0 && year <= mortgageDeductionYears)
+      ? Math.round(cappedBalance * mortgageDeductionRate / 100)
       : 0;
-    const capTotal = mortgageDeductionMaxPerPerson > 0
-      ? mortgageDeductionMaxPerPerson * claimants
-      : Number.MAX_SAFE_INTEGER;
-    const mortgageDeduction = Math.min(rawDeduction, capTotal);
+
+    const lifeEventCost = lifeEvents
+      .filter((e) => e.year === year)
+      .reduce((sum, e) => sum + e.amount, 0);
+    const incomeEventAmount = incomeEvents
+      .filter((e) => e.year === year)
+      .reduce((sum, e) => sum + e.amount, 0);
 
     const remainder = householdTakeHome + mortgageDeduction - loanPayment - livingCost - childrenCost;
 
@@ -345,11 +360,14 @@ export function calculateCashFlow(
       householdIncome,
       householdBaseIncome,
       householdTakeHome,
+      householdBaseTakeHome,
       loanPayment,
       monthlyRegularPayment,
       livingCost,
       childrenCost,
       mortgageDeduction,
+      lifeEventCost,
+      incomeEventAmount,
       remainder,
       husbandOnLeave,
       wifeOnLeave,
@@ -394,6 +412,8 @@ export function calculateAssets(
         mortgageDeductionMaxPerPerson,
         mortgageDeductionClaimants,
         mortgageDeductionLoanType,
+        lifeEvents,
+        incomeEvents ?? [],
       )
     : null;
 
@@ -410,24 +430,21 @@ export function calculateAssets(
           return sum + educationCost + extraCosts;
         }, 0);
 
-    const lifeEventCost = lifeEvents
-      .filter((e) => e.year === year)
-      .reduce((sum, e) => sum + e.amount, 0);
-
-    const incomeEventAmount = (incomeEvents ?? [])
-      .filter((e) => e.year === year)
-      .reduce((sum, e) => sum + e.amount, 0);
+    // cashFlow がある場合はそこから取得（calculateCashFlow に既に lifeEvents を渡している）
+    const lifeEventCost = cashFlow
+      ? cashFlow[i].lifeEventCost
+      : lifeEvents.filter((e) => e.year === year).reduce((sum, e) => sum + e.amount, 0);
+    const incomeEventAmount = cashFlow
+      ? cashFlow[i].incomeEventAmount
+      : (incomeEvents ?? []).filter((e) => e.year === year).reduce((sum, e) => sum + e.amount, 0);
 
     // 年間投資額（月額投資 × 12）
     const annualInvestment = monthlyInvestment * 12;
 
     if (cashFlow) {
-      // キャッシュフローがある場合: 余剰から投資額を引いた分が現金に積み上がる
-      // ライフイベント費は現金から直接払い、収入イベントは現金に追加
-      const annualSavings = cashFlow[i].remainder;
-      cashAssets += annualSavings - annualInvestment - lifeEventCost + incomeEventAmount;
+      // remainder = 手取り + 控除 - ローン - 生活費 - 子ども費用（ライフイベントは含まず）
+      cashAssets += cashFlow[i].remainder - annualInvestment - lifeEventCost + incomeEventAmount;
     } else {
-      // シンプルモード: 月額投資のみ、ライフイベントは現金から
       cashAssets += -lifeEventCost + incomeEventAmount;
     }
 

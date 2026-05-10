@@ -16,7 +16,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { calculateCashFlow } from "@/lib/calculations";
-import type { LoanResult, IncomeInput, ChildInput } from "@/types";
+import type { LoanResult, IncomeInput, ChildInput, LifeEventInput, IncomeEventInput } from "@/types";
 
 type Props = {
   loanResult: LoanResult;
@@ -27,9 +27,11 @@ type Props = {
   mortgageDeductionMaxPerPerson?: number;
   mortgageDeductionClaimants?: number;
   mortgageDeductionLoanType?: 'joint' | 'pair';
+  lifeEvents?: LifeEventInput[];
+  incomeEvents?: IncomeEventInput[];
 };
 
-export default function CashFlowChart({ loanResult, incomeInput, childList, mortgageDeductionRate = 0, mortgageDeductionYears = 0, mortgageDeductionMaxPerPerson = 0, mortgageDeductionClaimants = 1, mortgageDeductionLoanType = 'joint' }: Props) {
+export default function CashFlowChart({ loanResult, incomeInput, childList, mortgageDeductionRate = 0, mortgageDeductionYears = 0, mortgageDeductionMaxPerPerson = 0, mortgageDeductionClaimants = 1, mortgageDeductionLoanType = 'joint', lifeEvents = [], incomeEvents = [] }: Props) {
   const [showTable, setShowTable] = useState(true);
 
   if (!loanResult.annual || loanResult.annual.length === 0) {
@@ -49,13 +51,24 @@ export default function CashFlowChart({ loanResult, incomeInput, childList, mort
     mortgageDeductionMaxPerPerson,
     mortgageDeductionClaimants,
     mortgageDeductionLoanType,
+    lifeEvents,
+    incomeEvents,
   );
-  const hasNegativeRemainder = data.some((d) => d.remainder < 0);
+
+  const hasLifeEvents = lifeEvents.length > 0 || incomeEvents.length > 0;
+
+  // ライフイベント込みの実質手残りを付加
+  const chartData = data.map((d) => ({
+    ...d,
+    netRemainder: d.remainder - d.lifeEventCost + d.incomeEventAmount,
+  }));
+
+  const hasNegativeRemainder = chartData.some((d) => d.netRemainder < 0);
 
   return (
     <div className="space-y-4">
       <ResponsiveContainer width="100%" height={400}>
-        <ComposedChart data={data} margin={{ top: 10, right: 30, left: 10, bottom: 10 }}>
+        <ComposedChart data={chartData} margin={{ top: 10, right: 30, left: 10, bottom: 10 }}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis
             dataKey="year"
@@ -75,31 +88,13 @@ export default function CashFlowChart({ loanResult, incomeInput, childList, mort
           />
           <Legend />
 
-          {/* 積み上げ棒グラフ: 年間ローン返済額 */}
-          <Bar
-            dataKey="loanPayment"
-            name="年間ローン返済額（万円）"
-            stackId="cost"
-            fill="#ef4444"
-          />
+          <Bar dataKey="loanPayment" name="年間ローン返済額（万円）" stackId="cost" fill="#ef4444" />
+          <Bar dataKey="livingCost" name="生活費（万円）" stackId="cost" fill="#f97316" />
+          <Bar dataKey="childrenCost" name="子ども費用（万円）" stackId="cost" fill="#8b5cf6" />
+          {hasLifeEvents && (
+            <Bar dataKey="lifeEventCost" name="ライフイベント（万円）" stackId="cost" fill="#f59e0b" />
+          )}
 
-          {/* 積み上げ棒グラフ: 生活費 */}
-          <Bar
-            dataKey="livingCost"
-            name="生活費（万円）"
-            stackId="cost"
-            fill="#f97316"
-          />
-
-          {/* 積み上げ棒グラフ: 子ども費用 */}
-          <Bar
-            dataKey="childrenCost"
-            name="子ども費用（万円）"
-            stackId="cost"
-            fill="#8b5cf6"
-          />
-
-          {/* 折れ線: 世帯手取り */}
           <Line
             type="monotone"
             dataKey="householdTakeHome"
@@ -108,11 +103,9 @@ export default function CashFlowChart({ loanResult, incomeInput, childList, mort
             dot={false}
             strokeWidth={2}
           />
-
-          {/* 折れ線: 手残り（黒） */}
           <Line
             type="monotone"
-            dataKey="remainder"
+            dataKey={hasLifeEvents ? "netRemainder" : "remainder"}
             name="手残り（万円）"
             stroke="#000000"
             dot={false}
@@ -129,9 +122,11 @@ export default function CashFlowChart({ loanResult, incomeInput, childList, mort
 
       {/* 年次収支グラフ（手残り±） */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-700 mb-2">年次収支（手残り）</h3>
+        <h3 className="text-sm font-semibold text-gray-700 mb-2">
+          年次収支（{hasLifeEvents ? "実質手残り" : "手残り"}）
+        </h3>
         <ResponsiveContainer width="100%" height={180}>
-          <BarChart data={data} margin={{ top: 5, right: 30, left: 10, bottom: 5 }}>
+          <BarChart data={chartData} margin={{ top: 5, right: 30, left: 10, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis
               dataKey="year"
@@ -145,11 +140,11 @@ export default function CashFlowChart({ loanResult, incomeInput, childList, mort
               labelFormatter={(label) => `${label} 年目`}
             />
             <ReferenceLine y={0} stroke="#6b7280" />
-            <Bar dataKey="remainder" name="年間収支（万円）">
-              {data.map((entry, index) => (
+            <Bar dataKey={hasLifeEvents ? "netRemainder" : "remainder"} name="年間収支（万円）">
+              {chartData.map((entry, index) => (
                 <Cell
                   key={`cell-${index}`}
-                  fill={entry.remainder >= 0 ? "#22c55e" : "#ef4444"}
+                  fill={(hasLifeEvents ? entry.netRemainder : entry.remainder) >= 0 ? "#22c55e" : "#ef4444"}
                 />
               ))}
             </Bar>
@@ -181,57 +176,86 @@ export default function CashFlowChart({ loanResult, incomeInput, childList, mort
                 <th className="border border-gray-200 px-3 py-2 text-right whitespace-nowrap">世帯手取り（万円）</th>
                 <th className="border border-gray-200 px-3 py-2 text-right whitespace-nowrap">子ども費用（万円）</th>
                 <th className="border border-gray-200 px-3 py-2 text-right whitespace-nowrap">ローン控除（万円）</th>
+                {hasLifeEvents && (
+                  <th className="border border-gray-200 px-3 py-2 text-right whitespace-nowrap">一時収支（万円）</th>
+                )}
                 <th className="border border-gray-200 px-3 py-2 text-right whitespace-nowrap">手残り（万円）</th>
+                {hasLifeEvents && (
+                  <th className="border border-gray-200 px-3 py-2 text-right whitespace-nowrap">実質手残り（万円）</th>
+                )}
               </tr>
             </thead>
             <tbody>
-              {data.map((row) => (
-                <tr
-                  key={row.year}
-                  className={row.remainder < 0 ? "bg-red-50" : "hover:bg-gray-50"}
-                >
-                  <td className="border border-gray-200 px-3 py-1.5 text-right">{row.year}</td>
-                  <td className="border border-gray-200 px-3 py-1.5 text-right">{row.calendarYear}</td>
-                  <td className="border border-gray-200 px-3 py-1.5 text-right">
-                    {row.husbandAge}歳
-                    {row.husbandOnLeave && (
-                      <span className="ml-1 text-xs text-blue-600 font-medium">育休</span>
+              {data.map((row) => {
+                const netRemainder = row.remainder - row.lifeEventCost + row.incomeEventAmount;
+                const rowBg = netRemainder < 0 ? "bg-red-50" : "hover:bg-gray-50";
+                const netBalance = row.incomeEventAmount - row.lifeEventCost;
+                return (
+                  <tr key={row.year} className={rowBg}>
+                    <td className="border border-gray-200 px-3 py-1.5 text-right">{row.year}</td>
+                    <td className="border border-gray-200 px-3 py-1.5 text-right">{row.calendarYear}</td>
+                    <td className="border border-gray-200 px-3 py-1.5 text-right">
+                      {row.husbandAge}歳
+                      {row.husbandOnLeave && (
+                        <span className="ml-1 text-xs text-blue-600 font-medium">育休</span>
+                      )}
+                      {row.husbandIncome === 0 && !row.husbandOnLeave && (
+                        <span className="ml-1 text-xs text-gray-400">退職</span>
+                      )}
+                    </td>
+                    <td className="border border-gray-200 px-3 py-1.5 text-right">
+                      {row.husbandIncome.toLocaleString()}
+                    </td>
+                    <td className="border border-gray-200 px-3 py-1.5 text-right">
+                      {row.wifeAge}歳
+                      {row.wifeOnLeave && (
+                        <span className="ml-1 text-xs text-blue-600 font-medium">育休</span>
+                      )}
+                      {row.wifeIncome === 0 && !row.wifeOnLeave && (
+                        <span className="ml-1 text-xs text-gray-400">退職</span>
+                      )}
+                    </td>
+                    <td className="border border-gray-200 px-3 py-1.5 text-right">
+                      {row.wifeIncome.toLocaleString()}
+                    </td>
+                    <td className="border border-gray-200 px-3 py-1.5 text-right font-medium">
+                      {row.householdTakeHome.toLocaleString()}
+                    </td>
+                    <td className="border border-gray-200 px-3 py-1.5 text-right text-violet-700">
+                      {row.childrenCost > 0 ? row.childrenCost.toLocaleString() : "—"}
+                    </td>
+                    <td className="border border-gray-200 px-3 py-1.5 text-right text-green-700">
+                      {row.mortgageDeduction > 0 ? `+${row.mortgageDeduction.toLocaleString()}` : "—"}
+                    </td>
+                    {hasLifeEvents && (
+                      <td className={`border border-gray-200 px-3 py-1.5 text-right ${
+                        netBalance < 0 ? "text-orange-600" : netBalance > 0 ? "text-green-700" : "text-gray-400"
+                      }`}>
+                        {netBalance !== 0 ? (
+                          <span title={[
+                            row.lifeEventCost > 0 ? `支出: -${row.lifeEventCost.toLocaleString()}` : "",
+                            row.incomeEventAmount > 0 ? `収入: +${row.incomeEventAmount.toLocaleString()}` : "",
+                          ].filter(Boolean).join(" / ")}>
+                            {netBalance > 0 ? "+" : ""}{netBalance.toLocaleString()}
+                          </span>
+                        ) : "—"}
+                      </td>
                     )}
-                    {row.husbandIncome === 0 && !row.husbandOnLeave && (
-                      <span className="ml-1 text-xs text-gray-400">退職</span>
+                    <td className={`border border-gray-200 px-3 py-1.5 text-right font-medium ${
+                      row.remainder < 0 ? "text-red-600" : "text-green-700"
+                    }`}>
+                      {row.remainder.toLocaleString()}
+                    </td>
+                    {hasLifeEvents && (
+                      <td className={`border border-gray-200 px-3 py-1.5 text-right font-bold ${
+                        netRemainder < 0 ? "text-red-700" : "text-green-800"
+                      }`}>
+                        {netRemainder.toLocaleString()}
+                      </td>
                     )}
-                  </td>
-                  <td className="border border-gray-200 px-3 py-1.5 text-right">
-                    {row.husbandIncome.toLocaleString()}
-                  </td>
-                  <td className="border border-gray-200 px-3 py-1.5 text-right">
-                    {row.wifeAge}歳
-                    {row.wifeOnLeave && (
-                      <span className="ml-1 text-xs text-blue-600 font-medium">育休</span>
-                    )}
-                    {row.wifeIncome === 0 && !row.wifeOnLeave && (
-                      <span className="ml-1 text-xs text-gray-400">退職</span>
-                    )}
-                  </td>
-                  <td className="border border-gray-200 px-3 py-1.5 text-right">
-                    {row.wifeIncome.toLocaleString()}
-                  </td>
-                  <td className="border border-gray-200 px-3 py-1.5 text-right font-medium">
-                    {row.householdTakeHome.toLocaleString()}
-                  </td>
-                  <td className="border border-gray-200 px-3 py-1.5 text-right text-violet-700">
-                    {row.childrenCost > 0 ? row.childrenCost.toLocaleString() : "—"}
-                  </td>
-                  <td className="border border-gray-200 px-3 py-1.5 text-right text-green-700">
-                    {row.mortgageDeduction > 0 ? `+${row.mortgageDeduction.toLocaleString()}` : "—"}
-                  </td>
-                  <td className={`border border-gray-200 px-3 py-1.5 text-right font-medium ${
-                    row.remainder < 0 ? "text-red-600" : "text-green-700"
-                  }`}>
-                    {row.remainder.toLocaleString()}
-                  </td>
-                </tr>
-              ))}
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

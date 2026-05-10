@@ -100,8 +100,10 @@ export default function Home() {
       loanInput.mortgageDeductionMaxPerPerson ?? 0,
       loanInput.mortgageDeductionClaimants ?? 1,
       loanInput.mortgageDeductionLoanType ?? "joint",
+      householdInput.lifeEvents,
+      householdInput.incomeEvents ?? [],
     ),
-    [loanResult, incomeInput, householdInput.children, loanInput.mortgageDeductionRate, loanInput.mortgageDeductionYears, loanInput.mortgageDeductionMaxPerPerson, loanInput.mortgageDeductionClaimants, loanInput.mortgageDeductionLoanType]
+    [loanResult, incomeInput, householdInput.children, householdInput.lifeEvents, householdInput.incomeEvents, loanInput.mortgageDeductionRate, loanInput.mortgageDeductionYears, loanInput.mortgageDeductionMaxPerPerson, loanInput.mortgageDeductionClaimants, loanInput.mortgageDeductionLoanType]
   );
 
   const currentYear = new Date().getFullYear();
@@ -333,6 +335,8 @@ export default function Home() {
                 mortgageDeductionMaxPerPerson={loanInput.mortgageDeductionMaxPerPerson}
                 mortgageDeductionClaimants={loanInput.mortgageDeductionClaimants}
                 mortgageDeductionLoanType={loanInput.mortgageDeductionLoanType}
+                lifeEvents={householdInput.lifeEvents}
+                incomeEvents={householdInput.incomeEvents ?? []}
               />
             </div>
           </>

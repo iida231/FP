@@ -35,9 +35,10 @@ export default function CashFlowPieChart({ cashFlow, childList = [] }: Props) {
 
   const row = cashFlow[selectedYear - 1];
 
-  // ボーナス込み / ボーナスなし で収入を切り替え
-  const annualIncome = showBonus ? row.householdIncome : row.householdBaseIncome;
-  const bonusDiff = row.householdIncome - row.householdBaseIncome;
+  // 手取りベースで表示（remainder の計算と一致させる）
+  const annualTakeHome = showBonus ? row.householdTakeHome : row.householdBaseTakeHome;
+  // ボーナス分の手取り差分（手残り補正用）
+  const takeHomeBonusDiff = row.householdTakeHome - row.householdBaseTakeHome;
 
   // 月次子ども費用：追加生活費＋習い事のみ（教育費は ChildrenSimulator で別表示）
   const monthlyChildExtra = childList.reduce((sum, child) => {
@@ -47,15 +48,15 @@ export default function CashFlowPieChart({ cashFlow, childList = [] }: Props) {
 
   // 月額通常返済は calculateCashFlow が計算した monthlyRegularPayment を使用（ローン返済グラフと一致）
   const monthly = {
-    income: Math.round(annualIncome / 12),
+    income: Math.round(annualTakeHome / 12),
     loan: Math.round(row.monthlyRegularPayment * 10) / 10,
     living: Math.round(row.livingCost / 12),
     children: Math.round(monthlyChildExtra),
     deduction: Math.round(row.mortgageDeduction / 12),
-    // row.remainder には控除が含まれているので直接利用
+    // remainder は householdTakeHome 基準。ボーナスなし時は手取りボーナス分を除く
     remainder: showBonus
       ? Math.round(row.remainder / 12)
-      : Math.round((row.remainder - bonusDiff) / 12),
+      : Math.round((row.remainder - takeHomeBonusDiff) / 12),
   };
 
   const isDeficit = monthly.remainder < 0;
@@ -80,7 +81,7 @@ export default function CashFlowPieChart({ cashFlow, childList = [] }: Props) {
     ? positiveItems.reduce((s, i) => s + i.value, 0) + (-monthly.remainder)
     : monthly.income;
 
-  const hasBonus = row.householdIncome !== row.householdBaseIncome;
+  const hasBonus = takeHomeBonusDiff > 0;
 
   return (
     <div className="space-y-4">
@@ -163,7 +164,7 @@ export default function CashFlowPieChart({ cashFlow, childList = [] }: Props) {
 
           <div className="space-y-2 text-sm">
             <div className="flex justify-between items-center py-1.5 border-b border-gray-100">
-              <span className="text-gray-600">月間世帯収入</span>
+              <span className="text-gray-600">月間世帯収入（手取り）</span>
               <span className="font-semibold">
                 {fmt(monthly.income)}
                 {!showBonus && hasBonus && (
